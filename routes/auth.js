@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
       telegramId,
       firstName,
       photoUrl: photoUrl || 'https://via.placeholder.com/40',
-      balance: 200,
+      balance: 10000,
       inventory: [],
     });
 
