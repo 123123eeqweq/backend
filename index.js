@@ -23,17 +23,34 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: ['http://localhost:3000', 'https://t.me'], // Явно разрешаем локалхост и Telegram
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://t.me'], // Явно разрешаем локалхост и Telegram
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'ngrok-skip-browser-warning'],
+  credentials: true,
+}));
 app.use(express.json());
+
+// Обработка preflight запросов
+app.options('*', cors());
 
 // Подключение к MongoDB
 connectDB();
+
+// Логирование подключений WebSocket
+io.on('connection', (socket) => {
+  console.log(`WebSocket клиент подключился: ${socket.id}`);
+  socket.on('disconnect', () => {
+    console.log(`WebSocket клиент отключился: ${socket.id}`);
+  });
+});
 
 // Маршруты
 app.use('/api/auth', authRoutes);
@@ -55,6 +72,7 @@ app.get('/', (req, res) => {
 
 // Роут для получения текущих спинов
 app.get('/api/live-spins', (req, res) => {
+  console.log('Запрос /api/live-spins');
   res.json(getLiveSpins());
 });
 
