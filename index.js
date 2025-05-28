@@ -13,6 +13,9 @@ const freeDailyRoutes = require('./routes/free-daily');
 const liveSpinsRoutes = require('./routes/live-spins');
 const referralsRoutes = require('./routes/referrals');
 const depositRoutes = require('./routes/deposit');
+const Case = require('./models/Case');
+const Gift = require('./models/Gift');
+const LiveSpin = require('./models/LiveSpin');
 const { Server } = require('socket.io');
 const http = require('http');
 const { startFakeSpinGeneration, getLiveSpins } = require('./utils/fakeSpins');
@@ -23,34 +26,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:3000', 'https://t.me'], // Явно разрешаем локалхост и Telegram
+    origin: '*',
     methods: ['GET', 'POST'],
-    credentials: true,
   },
 });
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://t.me'], // Явно разрешаем локалхост и Telegram
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'ngrok-skip-browser-warning'],
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
-
-// Обработка preflight запросов
-app.options('*', cors());
 
 // Подключение к MongoDB
 connectDB();
-
-// Логирование подключений WebSocket
-io.on('connection', (socket) => {
-  console.log(`WebSocket клиент подключился: ${socket.id}`);
-  socket.on('disconnect', () => {
-    console.log(`WebSocket клиент отключился: ${socket.id}`);
-  });
-});
 
 // Маршруты
 app.use('/api/auth', authRoutes);
@@ -72,7 +58,6 @@ app.get('/', (req, res) => {
 
 // Роут для получения текущих спинов
 app.get('/api/live-spins', (req, res) => {
-  console.log('Запрос /api/live-spins');
   res.json(getLiveSpins());
 });
 
