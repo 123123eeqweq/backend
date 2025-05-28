@@ -18,7 +18,6 @@ const Gift = require('./models/Gift');
 const LiveSpin = require('./models/LiveSpin');
 const { Server } = require('socket.io');
 const http = require('http');
-const gifts = require('./seed').gifts; // Импортируем gifts из seed.js
 
 dotenv.config();
 
@@ -59,8 +58,16 @@ app.get('/', (req, res) => {
 // Фоновая задача для генерации спинов
 const generateLiveSpin = async () => {
   try {
+    // Получаем все подарки из MongoDB
+    const gifts = await Gift.find().lean();
+
     // Фильтруем gift_001 (none)
-    const validGifts = gifts.filter(gift => gift.id !== 'gift_001');
+    const validGifts = gifts.filter(gift => gift.giftId !== 'gift_001');
+    if (validGifts.length === 0) {
+      console.error('Нет доступных подарков для ленты!');
+      setTimeout(generateLiveSpin, 3000);
+      return;
+    }
 
     // Рассчитываем веса: обратная пропорция цены
     const weights = validGifts.map(gift => {
@@ -86,8 +93,8 @@ const generateLiveSpin = async () => {
 
     // Сохраняем спин
     const liveSpin = new LiveSpin({
-      giftId: selectedGift.id,
-      caseId: 'fake_case', // Поскольку не привязываем к кейсу
+      giftId: selectedGift.giftId,
+      caseId: 'fake_case', // Без привязки к кейсу
     });
     await liveSpin.save();
 
@@ -107,12 +114,12 @@ const generateLiveSpin = async () => {
     // Отправляем спин всем клиентам
     io.emit('newLiveSpin', spinData);
 
-    // Удаляем старые спины (храним последние 50)
+    // Удаляем старые спины (храним последние 100)
     const spinCount = await LiveSpin.countDocuments();
-    if (spinCount > 50) {
+    if (spinCount > 100) {
       const oldestSpins = await LiveSpin.find()
         .sort({ createdAt: 1 })
-        .limit(spinCount - 50);
+        .limit(spinCount - 100);
       await LiveSpin.deleteMany({ _id: { $in: oldestSpins.map(s => s._id) } });
     }
 
