@@ -13,12 +13,9 @@ const freeDailyRoutes = require('./routes/free-daily');
 const liveSpinsRoutes = require('./routes/live-spins');
 const referralsRoutes = require('./routes/referrals');
 const depositRoutes = require('./routes/deposit');
-const Case = require('./models/Case');
-const Gift = require('./models/Gift');
-const LiveSpin = require('./models/LiveSpin');
 const { Server } = require('socket.io');
 const http = require('http');
-const { startFakeSpinGeneration, getLiveSpins } = require('./utils/fakeSpins'); // Импорт fakeSpins
+const { startFakeSpinGeneration, getLiveSpins } = require('./utils/fakeSpins');
 
 dotenv.config();
 
