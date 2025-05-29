@@ -3,49 +3,49 @@ const router = express.Router();
 const Case = require('../models/Case');
 const Gift = require('../models/Gift');
 const User = require('../models/User');
+const LiveSpin = require('../models/LiveSpin');
 
-// Эндпоинт для спина кейса
 router.post('/:caseId', async (req, res) => {
   try {
     const { telegramId } = req.body;
     const { caseId } = req.params;
 
     if (!telegramId) {
-      return res.status(400).json({ message: 'Telegram ID нужен, братан!' });
+      return res.status(400).json({ message: 'Telegram ID is required' });
     }
 
-    // Находим юзера
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Находим кейс
     const caseItem = await Case.findOne({ caseId });
     if (!caseItem) {
-      return res.status(404).json({ message: 'Кейс не найден, братан!' });
+      return res.status(404).json({ message: 'Case not found' });
     }
 
-    // Проверка для Free Daily (case_13)
     if (caseId === 'case_13') {
       const now = new Date();
       const lastSpin = user.lastFreeDailySpin;
       if (lastSpin && (now - lastSpin) < 24 * 60 * 60 * 1000) {
         const timeLeft = 24 * 60 * 60 * 1000 - (now - lastSpin);
         return res.status(403).json({
-          message: 'Брат, Free Daily можно крутить раз в день!',
+          message: 'Free Daily can only be spun once per day',
           timeLeft: Math.floor(timeLeft / 1000),
         });
       }
+    } else if (caseItem.diamondPrice) {
+      if (user.diamonds < caseItem.diamondPrice) {
+        return res.status(400).json({ message: 'Not enough diamonds' });
+      }
+      user.diamonds -= caseItem.diamondPrice;
     } else {
-      // Проверяем баланс для платных кейсов
       if (user.balance < caseItem.price) {
-        return res.status(400).json({ message: 'Не хватает звёзд, братан!' });
+        return res.status(400).json({ message: 'Not enough stars' });
       }
       user.balance -= caseItem.price;
     }
 
-    // Взвешенный рандом
     const rand = Math.random();
     let cumulativeProbability = 0;
     let chosenGift = null;
@@ -61,9 +61,7 @@ router.post('/:caseId', async (req, res) => {
       chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
     }
 
-    // Пропускаем gift_001 (none)
     if (chosenGift.giftId === 'gift_001') {
-      // Если Free Daily, обновляем lastFreeDailySpin, но не добавляем в инвентарь
       if (caseId === 'case_13') {
         user.lastFreeDailySpin = new Date();
         await user.save();
@@ -76,11 +74,11 @@ router.post('/:caseId', async (req, res) => {
           price: chosenGift.price,
         },
         newBalance: user.balance,
-        message: 'Ничего не выпало, братан!',
+        newDiamonds: user.diamonds,
+        message: 'No reward received',
       });
     }
 
-    // Обновляем инвентарь
     user.inventory.push({
       giftId: chosenGift.giftId,
       name: chosenGift.name,
@@ -88,14 +86,19 @@ router.post('/:caseId', async (req, res) => {
       price: chosenGift.price,
     });
 
-    // Если Free Daily, обновляем lastFreeDailySpin
     if (caseId === 'case_13') {
       user.lastFreeDailySpin = new Date();
     }
 
+    // Сохраняем спин в ленту
+    const liveSpin = new LiveSpin({
+      giftId: chosenGift.giftId,
+      caseId: caseItem.caseId,
+    });
+    await liveSpin.save();
+
     await user.save();
 
-    // Возвращаем результат спина
     res.json({
       gift: {
         id: chosenGift.giftId,
@@ -104,10 +107,10 @@ router.post('/:caseId', async (req, res) => {
         price: chosenGift.price,
       },
       newBalance: user.balance,
+      newDiamonds: user.diamonds,
     });
   } catch (error) {
-    console.error('Ошибка при спине:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

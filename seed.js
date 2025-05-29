@@ -222,9 +222,9 @@ const seedDB = async () => {
         { giftId: 'gift_027', probability: 0.20 },
         { giftId: 'gift_028', probability: 0.15 },
         { giftId: 'gift_034', probability: 0.10 },
-        { giftId: 'gift_035', probability: 0.05 },
-        { giftId: 'gift_036', probability: 0.0499 },
-        { giftId: 'gift_037', probability: 0.0001 },
+        { giftId: 'gift_035', probability: 0.03 },
+        { giftId: 'gift_036', probability: 0.0009 },
+        { giftId: 'gift_037', probability: 0 },
       ],
     },
     {
@@ -234,8 +234,8 @@ const seedDB = async () => {
       price: 25,
       isTopup: false,
       items: [
-        { giftId: 'gift_001', probability: 0.99999167 },
-        { giftId: 'gift_037', probability: 0.00000833 },
+        { giftId: 'gift_001', probability: 1 },
+        { giftId: 'gift_037', probability: 0 },
       ],
     },
     {
@@ -245,8 +245,8 @@ const seedDB = async () => {
       price: 20,
       isTopup: false,
       items: [
-        { giftId: 'gift_001', probability: 0.99993684 },
-        { giftId: 'gift_036', probability: 0.00006316 },
+        { giftId: 'gift_001', probability: 1 },
+        { giftId: 'gift_036', probability: 0 },
       ],
     },
     {
@@ -256,8 +256,8 @@ const seedDB = async () => {
       price: 15,
       isTopup: false,
       items: [
-        { giftId: 'gift_001', probability: 0.99991 },
-        { giftId: 'gift_035', probability: 0.00009 },
+        { giftId: 'gift_001', probability: 1 },
+        { giftId: 'gift_035', probability: 0 },
       ],
     },
     {
@@ -339,24 +339,75 @@ const seedDB = async () => {
       price: 0,
       isTopup: true,
       items: [
-        { giftId: 'gift_017', probability: 0.20 },
-        { giftId: 'gift_023', probability: 0.15 },
-        { giftId: 'gift_024', probability: 0.10 },
-        { giftId: 'gift_025', probability: 0.10 },
-        { giftId: 'gift_026', probability: 0.10 },
-        { giftId: 'gift_027', probability: 0.08 },
-        { giftId: 'gift_028', probability: 0.08 },
-        { giftId: 'gift_029', probability: 0.05 },
-        { giftId: 'gift_030', probability: 0.05 },
-        { giftId: 'gift_031', probability: 0.03 },
-        { giftId: 'gift_032', probability: 0.02 },
-        { giftId: 'gift_033', probability: 0.02 },
-        { giftId: 'gift_034', probability: 0.01 },
-        { giftId: 'gift_035', probability: 0.005 },
-        { giftId: 'gift_036', probability: 0.003 },
-        { giftId: 'gift_037', probability: 0.002 },
-      ],
+      { giftId: 'gift_017', probability: 0.20 },
+      { giftId: 'gift_023', probability: 0.15 },
+      { giftId: 'gift_024', probability: 0.10 },
+      { giftId: 'gift_025', probability: 0.10 },
+      { giftId: 'gift_026', probability: 0.10 },
+      { giftId: 'gift_027', probability: 0.08 },
+      { giftId: 'gift_028', probability: 0.08 },
+      { giftId: 'gift_029', probability: 0.05 },
+      { giftId: 'gift_030', probability: 0.05 },
+      { giftId: 'gift_031', probability: 0.03 },
+      { giftId: 'gift_032', probability: 0.02 },
+      { giftId: 'gift_033', probability: 0.02 },
+      { giftId: 'gift_034', probability: 0.01 },
+      { giftId: 'gift_035', probability: 0.002 },
+      { giftId: 'gift_036', probability: 0.001 },
+      { giftId: 'gift_037', probability: 0.000 }
+    ],
     },
+  {
+    caseId: 'case_18',
+    name: '15 Рефералов',
+    image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748533589/18_l5eajv.png', // Логотип от case_1
+    price: 0,
+    diamondPrice: 15,
+    isTopup: false,
+    isReferral: true,
+    items: [
+      { giftId: 'gift_002', probability: 0.475 }, // Дешёвка
+      { giftId: 'gift_005', probability: 0.475 }, // Дешёвка
+      { giftId: 'gift_010', probability: 0.0245 }, // Среднее
+      { giftId: 'gift_015', probability: 0.0245 }, // Среднее
+      { giftId: 'gift_020', probability: 0.001 } // Пиздатое
+    ]
+  },
+  {
+    caseId: 'case_19',
+    name: '50 Рефералов',
+    image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748533589/19_l6zyw6.png', // Логотип от case_2
+    price: 0,
+    diamondPrice: 50,
+    isTopup: false,
+    isReferral: true,
+    items: [
+      { giftId: 'gift_008', probability: 0.95 }, // Дешёвка
+      { giftId: 'gift_012', probability: 0.0163 }, // Среднее
+      { giftId: 'gift_016', probability: 0.0163 }, // Среднее
+      { giftId: 'gift_021', probability: 0.0164 }, // Среднее
+      { giftId: 'gift_025', probability: 0.0005 }, // Пиздатое
+      { giftId: 'gift_030', probability: 0 } // Пиздатое
+    ]
+  },
+  {
+    caseId: 'case_20',
+    name: '150 Рефералов',
+    image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748533589/20_oorjlv.png', // Логотип от case_3
+    price: 0,
+    diamondPrice: 150,
+    isTopup: false,
+    isReferral: true,
+    items: [
+      { giftId: 'gift_015', probability: 0.475 }, // Дешёвка (ну, относительно)
+      { giftId: 'gift_018', probability: 0.475 }, // Дешёвка (ну, относительно)
+      { giftId: 'gift_023', probability: 0.0245 }, // Среднее
+      { giftId: 'gift_027', probability: 0.0245 }, // Среднее
+      { giftId: 'gift_032', probability: 0 }, // Пиздатое
+      { giftId: 'gift_035', probability: 0 }, // Пиздатое
+      { giftId: 'gift_037', probability: 0 } // Пиздатое
+    ]
+  }
   ];
 
   await Case.insertMany(cases);

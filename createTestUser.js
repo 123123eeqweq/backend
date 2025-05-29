@@ -31,13 +31,13 @@ const createTestUser = async () => {
           {
             giftId: 'gift_002',
             name: 'heart',
-            image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/w_50,h_50,c_fill,q_auto,f_auto/v1748183353/2_jvtcjs.png',
+            image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183353/2_jvtcjs.png',
             price: 15,
           },
           {
             giftId: 'gift_003',
             name: 'teddy',
-            image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/w_50,h_50,c_fill,q_auto,f_auto/v1748183353/4_bcuxgp.png',
+            image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183353/4_bcuxgp.png',
             price: 15,
           },
         ],
