@@ -11,7 +11,7 @@ router.get('/:telegramId', async (req, res) => {
     }
 
     res.json({
-      referralLink: `t.me/MyBot?start=ref_${telegramId}`,
+      referralLink: `t.me/testerywieyr4343_bot?start=ref_${telegramId}`,
       invitedCount: user.referrals.length,
       diamonds: user.diamonds,
     });
