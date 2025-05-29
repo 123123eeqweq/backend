@@ -7,7 +7,7 @@ router.post('/login', async (req, res) => {
     const { telegramId, firstName, photoUrl, refId } = req.body;
 
     if (!telegramId || !firstName) {
-      return res.status(400).json({ message: 'Telegram ID and firstName are required' });
+      return res.status(400).json({ message: 'Требуются Telegram ID и имя' });
     }
 
     let user = await User.findOne({ telegramId });
@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
       if (referrer && refId !== telegramId) {
         user.invitedBy = refId;
         referrer.referrals.push(telegramId);
-        referrer.diamonds += 1; // Начисляем 1 алмазик
+        referrer.diamonds += 1;
         await referrer.save();
       }
     }
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
       inventory: user.inventory,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
