@@ -18,6 +18,7 @@ const Gift = require('./models/Gift');
 const LiveSpin = require('./models/LiveSpin');
 const { Server } = require('socket.io');
 const http = require('http');
+const promoRoutes = require('./routes/promo'); // Добавляем новый роут
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/free-daily', freeDailyRoutes);
 app.use('/api/live-spins', liveSpinsRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/deposit', depositRoutes);
+app.use('/api/promo', promoRoutes); // Добавляем роут для промокодов
 
 // Тестовый эндпоинт
 app.get('/', (req, res) => {
