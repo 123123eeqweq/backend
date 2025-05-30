@@ -36,10 +36,17 @@ router.post('/activate', async (req, res) => {
       return res.status(400).json({ message: 'Промокод неактивен или уже использован' });
     }
 
+    // Проверяем, не активировал ли юзер этот промокод
+    if (promoCode.activatedBy.includes(telegramId)) {
+      console.log('User already activated this promo:', telegramId, code);
+      return res.status(400).json({ message: 'Ты уже активировал этот промокод!' });
+    }
+
     // Начисляем звёзды
     console.log('Activating promo, adding stars:', promoCode.stars);
     user.balance += promoCode.stars;
     promoCode.activationsUsed += 1;
+    promoCode.activatedBy.push(telegramId);
     if (promoCode.activationsUsed >= promoCode.maxActivations) {
       promoCode.isActive = false;
     }
@@ -50,6 +57,7 @@ router.post('/activate', async (req, res) => {
     console.log('Promo activated successfully:', {
       newBalance: user.balance,
       activationsUsed: promoCode.activationsUsed,
+      activatedBy: promoCode.activatedBy,
     });
 
     res.json({

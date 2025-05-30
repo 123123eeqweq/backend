@@ -7,6 +7,7 @@ const promoCodeSchema = new mongoose.Schema({
   activationsUsed: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
+  activatedBy: [{ type: String }], // Массив telegramId юзеров, активировавших промокод
 });
 
 module.exports = mongoose.model('PromoCode', promoCodeSchema);
