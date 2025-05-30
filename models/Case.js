@@ -5,7 +5,9 @@ const caseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   image: { type: String, required: true },
   price: { type: Number, required: true },
+  diamondPrice: { type: Number, default: 0 }, // Добавляем поле diamondPrice
   isTopup: { type: Boolean, default: false },
+  isReferral: { type: Boolean, default: false }, // Добавляем поле isReferral
   items: [
     {
       giftId: { type: String, required: true },

@@ -26,7 +26,7 @@ router.post('/:caseId', async (req, res) => {
     }
 
     // Логируем данные кейса для отладки
-    console.log(`Spin request: user=${telegramId}, case=${caseId}, diamondPrice=${caseItem.diamondPrice}, userDiamonds=${user.diamonds}`);
+    console.log(`Spin request: user=${telegramId}, case=${caseId}, diamondPrice=${caseItem.diamondPrice}, price=${caseItem.price}, userDiamonds=${user.diamonds}, userBalance=${user.balance}`);
 
     // Проверка баланса
     if (caseId === 'case_13') {
@@ -39,7 +39,11 @@ router.post('/:caseId', async (req, res) => {
           timeLeft: Math.floor(timeLeft / 1000),
         });
       }
-    } else if (caseItem.diamondPrice && caseItem.diamondPrice > 0) {
+    } else if (caseItem.isReferral && (caseItem.diamondPrice === undefined || caseItem.diamondPrice === null)) {
+      // Защита от undefined diamondPrice для реферальных кейсов
+      console.error(`Ошибка: diamondPrice не определён для кейса ${caseId}`);
+      return res.status(500).json({ message: 'Ошибка конфигурации кейса: отсутствует diamondPrice' });
+    } else if (caseItem.isReferral && caseItem.diamondPrice > 0) {
       if (user.diamonds < caseItem.diamondPrice) {
         console.log(`Недостаточно алмазов: нужно ${caseItem.diamondPrice}, есть ${user.diamonds}`);
         return res.status(400).json({ message: 'Недостаточно алмазов' });
