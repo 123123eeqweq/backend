@@ -36,7 +36,7 @@ router.post('/:caseId', async (req, res) => {
           timeLeft: Math.floor(timeLeft / 1000),
         });
       }
-    } else if (caseItem.diamondPrice) {
+    } else if (caseItem.diamondPrice && caseItem.diamondPrice > 0) {
       if (user.diamonds < caseItem.diamondPrice) {
         return res.status(400).json({ message: 'Недостаточно алмазов' });
       }

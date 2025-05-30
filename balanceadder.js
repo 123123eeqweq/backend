@@ -21,14 +21,15 @@ const connectDB = async () => {
   }
 };
 
-// Функция добавления баланса
+// Функция добавления баланса и алмазов
 const addBalance = async () => {
   try {
     // Подключаемся к базе
     await connectDB();
 
-    const telegramId = 'test_user_123';
+    const telegramId = '338804511';
     const balanceToAdd = 5000;
+    const diamondsToAdd = 1000;
 
     // Находим юзера
     const user = await User.findOne({ telegramId });
@@ -38,11 +39,12 @@ const addBalance = async () => {
       return;
     }
 
-    // Добавляем баланс
+    // Добавляем баланс и алмазы
     user.balance += balanceToAdd;
+    user.diamonds += diamondsToAdd;
     await user.save();
 
-    console.log(`Добавлено ${balanceToAdd} звёздочек юзеру ${telegramId}. Новый баланс: ${user.balance}`);
+    console.log(`Добавлено ${balanceToAdd} звёздочек и ${diamondsToAdd} алмазиков юзеру ${telegramId}. Новый баланс: ${user.balance}, алмазы: ${user.diamonds}`);
 
     // Закрываем соединение
     await mongoose.connection.close();

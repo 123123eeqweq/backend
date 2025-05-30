@@ -29,8 +29,8 @@ const seedDB = async () => {
   const gifts = [
     { giftId: 'gift_001', name: 'none', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183343/1_qlm5at.png', price: 0 },
     { giftId: 'gift_002', name: 'heart', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183353/2_jvtcjs.png', price: 15 },
-    { giftId: 'gift_003', name: 'teddy', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183353/4_bcuxgp.png', price: 15 },
-    { giftId: 'gift_004', name: 'gift', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183354/3_fd81el.png', price: 25 },
+    { giftId: 'gift_003', name: 'teddy', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183354/3_fd81el.png', price: 15 },
+    { giftId: 'gift_004', name: 'gift', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183353/4_bcuxgp.png', price: 25 },
     { giftId: 'gift_005', name: 'flower', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183354/5_zksxqh.png', price: 25 },
     { giftId: 'gift_006', name: 'cake', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183355/6_xz261d.png', price: 50 },
     { giftId: 'gift_007', name: 'flowers', image: 'https://res.cloudinary.com/dxwmlthtf/image/upload/v1748183355/7_hryhjb.png', price: 50 },
