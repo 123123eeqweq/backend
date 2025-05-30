@@ -25,6 +25,9 @@ router.post('/:caseId', async (req, res) => {
       return res.status(404).json({ message: 'Кейс не найден или пустой' });
     }
 
+    // Логируем данные кейса для отладки
+    console.log(`Spin request: user=${telegramId}, case=${caseId}, diamondPrice=${caseItem.diamondPrice}, userDiamonds=${user.diamonds}`);
+
     // Проверка баланса
     if (caseId === 'case_13') {
       const now = new Date();
@@ -38,13 +41,17 @@ router.post('/:caseId', async (req, res) => {
       }
     } else if (caseItem.diamondPrice && caseItem.diamondPrice > 0) {
       if (user.diamonds < caseItem.diamondPrice) {
+        console.log(`Недостаточно алмазов: нужно ${caseItem.diamondPrice}, есть ${user.diamonds}`);
         return res.status(400).json({ message: 'Недостаточно алмазов' });
       }
+      console.log(`Списываем ${caseItem.diamondPrice} алмазов`);
       user.diamonds -= caseItem.diamondPrice;
     } else {
       if (user.balance < caseItem.price) {
+        console.log(`Недостаточно звёзд: нужно ${caseItem.price}, есть ${user.balance}`);
         return res.status(400).json({ message: 'Недостаточно звёзд' });
       }
+      console.log(`Списываем ${caseItem.price} звёзд`);
       user.balance -= caseItem.price;
     }
 
@@ -104,6 +111,8 @@ router.post('/:caseId', async (req, res) => {
     });
     await liveSpin.save();
     await user.save();
+
+    console.log(`Спин завершён: новый баланс=${user.balance}, новые алмазы=${user.diamonds}`);
 
     res.json({
       gift: {
