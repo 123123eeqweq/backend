@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const PromoCode = require('/models/PromoCode');
+const PromoCode = require('./models/PromoCoder');
 
 // Загружаем переменные окружения
 dotenv.config();
@@ -19,40 +19,38 @@ const connectDB = async () => {
   }
 };
 
-// Генерация случайного промокода
-const generateCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
-
-// Создание промокода
+// Функция создания промокода
 const createPromoCode = async () => {
   try {
     await connectDB();
 
-    // Настраиваемые параметры промокода
+    // Настройки промокода (меняй тут)
     const promoData = {
-      code: generateCode(), // Генерируем случайный код
-      stars: 1000, // Количество звёздочек (меняй по нужде)
-      maxActivations: 5, // Максимум активаций
+      code: 'LETO2025', // Задавай свой код тут
+      stars: 1000, // Количество звёзд за активацию
+      maxActivations: 4, // Максимум активаций
     };
 
-    // Проверяем, нет ли уже такого кода
+    // Валидация кода
+    if (!promoData.code || promoData.code.length < 4) {
+      console.error('Код должен быть длиной минимум 4 символа');
+      await mongoose.connection.close();
+      return;
+    }
+
+    // Проверяем, не существует ли уже такой код
     const existingPromo = await PromoCode.findOne({ code: promoData.code });
     if (existingPromo) {
-      console.log(`Код ${promoData.code} уже существует, генерируем новый...`);
-      promoData.code = generateCode();
+      console.error(`Промокод ${promoData.code} уже существует!`);
+      await mongoose.connection.close();
+      return;
     }
 
     const promoCode = new PromoCode(promoData);
     await promoCode.save();
 
-    console.log(`Промокод создан: ${promoData.code}, звёзды: ${promoData.stars}, активации: ${promoData.maxActivations}`);
-
+    console.log(`Промокод создан: ${promoCode.code}, звёзды: ${promoCode.stars}, активации: ${promoCode.maxActivations}`);
+    
     await mongoose.connection.close();
     console.log('База закрыта, всё ок!');
   } catch (error) {
