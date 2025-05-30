@@ -27,7 +27,7 @@ const addBalance = async () => {
     // Подключаемся к базе
     await connectDB();
 
-    const telegramId = '338804511';
+    const telegramId = 'test_user_123';
     const balanceToAdd = 5000;
 
     // Находим юзера

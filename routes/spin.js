@@ -11,17 +11,17 @@ router.post('/:caseId', async (req, res) => {
     const { caseId } = req.params;
 
     if (!telegramId) {
-      return res.status(400).json({ message: 'Telegram ID is required' });
+      return res.status(400).json({ message: 'Требуется Telegram ID' });
     }
 
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     const caseItem = await Case.findOne({ caseId });
     if (!caseItem) {
-      return res.status(404).json({ message: 'Case not found' });
+      return res.status(404).json({ message: 'Кейс не найден' });
     }
 
     if (caseId === 'case_13') {
@@ -30,18 +30,18 @@ router.post('/:caseId', async (req, res) => {
       if (lastSpin && (now - lastSpin) < 24 * 60 * 60 * 1000) {
         const timeLeft = 24 * 60 * 60 * 1000 - (now - lastSpin);
         return res.status(403).json({
-          message: 'Free Daily can only be spun once per day',
+          message: 'Бесплатный спин доступен раз в день',
           timeLeft: Math.floor(timeLeft / 1000),
         });
       }
     } else if (caseItem.diamondPrice) {
       if (user.diamonds < caseItem.diamondPrice) {
-        return res.status(400).json({ message: 'Not enough diamonds' });
+        return res.status(400).json({ message: 'Недостаточно алмазов' });
       }
       user.diamonds -= caseItem.diamondPrice;
     } else {
       if (user.balance < caseItem.price) {
-        return res.status(400).json({ message: 'Not enough stars' });
+        return res.status(400).json({ message: 'Недостаточно звёзд' });
       }
       user.balance -= caseItem.price;
     }
@@ -52,8 +52,7 @@ router.post('/:caseId', async (req, res) => {
     for (const item of caseItem.items) {
       cumulativeProbability += item.probability;
       if (rand < cumulativeProbability) {
-        const gift = await Gift.findOne({ giftId: item.giftId });
-        chosenGift = gift;
+        chosenGift = await Gift.findOne({ giftId: item.giftId });
         break;
       }
     }
@@ -75,7 +74,7 @@ router.post('/:caseId', async (req, res) => {
         },
         newBalance: user.balance,
         newDiamonds: user.diamonds,
-        message: 'No reward received',
+        message: 'Награда не получена',
       });
     }
 
@@ -90,7 +89,6 @@ router.post('/:caseId', async (req, res) => {
       user.lastFreeDailySpin = new Date();
     }
 
-    // Сохраняем спин в ленту
     const liveSpin = new LiveSpin({
       giftId: chosenGift.giftId,
       caseId: caseItem.caseId,
@@ -110,7 +108,7 @@ router.post('/:caseId', async (req, res) => {
       newDiamonds: user.diamonds,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
