@@ -10,6 +10,7 @@ router.post('/:caseId', async (req, res) => {
     const { telegramId } = req.body;
     const { caseId } = req.params;
 
+    // Валидация
     if (!telegramId) {
       return res.status(400).json({ message: 'Требуется Telegram ID' });
     }
@@ -20,10 +21,11 @@ router.post('/:caseId', async (req, res) => {
     }
 
     const caseItem = await Case.findOne({ caseId });
-    if (!caseItem) {
-      return res.status(404).json({ message: 'Кейс не найден' });
+    if (!caseItem || !caseItem.items || caseItem.items.length === 0) {
+      return res.status(404).json({ message: 'Кейс не найден или пустой' });
     }
 
+    // Проверка баланса
     if (caseId === 'case_13') {
       const now = new Date();
       const lastSpin = user.lastFreeDailySpin;
@@ -46,12 +48,13 @@ router.post('/:caseId', async (req, res) => {
       user.balance -= caseItem.price;
     }
 
+    // Выбор подарка
     const rand = Math.random();
     let cumulativeProbability = 0;
     let chosenGift = null;
     for (const item of caseItem.items) {
       cumulativeProbability += item.probability;
-      if (rand < cumulativeProbability) {
+      if (rand <= cumulativeProbability) {
         chosenGift = await Gift.findOne({ giftId: item.giftId });
         break;
       }
@@ -60,11 +63,15 @@ router.post('/:caseId', async (req, res) => {
       chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
     }
 
+    // Логирование для отладки
+    console.log(`Spin: user=${telegramId}, case=${caseId}, gift=${chosenGift.giftId}`);
+
+    // Обработка результата
     if (chosenGift.giftId === 'gift_001') {
       if (caseId === 'case_13') {
         user.lastFreeDailySpin = new Date();
-        await user.save();
       }
+      await user.save();
       return res.json({
         gift: {
           id: chosenGift.giftId,
@@ -78,6 +85,7 @@ router.post('/:caseId', async (req, res) => {
       });
     }
 
+    // Добавление в инвентарь
     user.inventory.push({
       giftId: chosenGift.giftId,
       name: chosenGift.name,
@@ -89,12 +97,12 @@ router.post('/:caseId', async (req, res) => {
       user.lastFreeDailySpin = new Date();
     }
 
+    // Сохранение спина
     const liveSpin = new LiveSpin({
       giftId: chosenGift.giftId,
       caseId: caseItem.caseId,
     });
     await liveSpin.save();
-
     await user.save();
 
     res.json({
@@ -108,6 +116,7 @@ router.post('/:caseId', async (req, res) => {
       newDiamonds: user.diamonds,
     });
   } catch (error) {
+    console.error(`Spin error: ${error.message}`);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
