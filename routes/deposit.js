@@ -1,30 +1,49 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 router.post('/:telegramId', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { telegramId } = req.params;
-    const { amount } = req.body;
+    const { tonAmount } = req.body;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid deposit amount' });
+    if (!tonAmount || tonAmount <= 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Некорректная сумма депозита, братан!' });
     }
 
-    const user = await User.findOne({ telegramId });
+    const user = await User.findOne({ telegramId }).session(session);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Юзер не найден, братан!' });
     }
 
-    user.balance += amount;
-    await user.save();
+    // Конвертируем TON в звёздочки (1 TON = 100 звёздочек)
+    const starsToAdd = Math.floor(tonAmount * 100);
+
+    // Обновляем баланс атомарно
+    user.balance += starsToAdd;
+    await user.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.json({
       newBalance: user.balance,
-      message: 'Deposit successful',
+      starsAdded: starsToAdd,
+      message: `Начислено ${starsToAdd} ⭐ за ${tonAmount} TON!`,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Ошибка депозита:', error);
+    res.status(500).json({ message: 'Сервак упал, сорян!' });
   }
 });
 

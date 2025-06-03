@@ -26,7 +26,7 @@ const createPromoCode = async () => {
 
     // Настройки промокода (меняй тут)
     const promoData = {
-      code: 'LETO2025', // Задавай свой код тут
+      code: 'NIGGER', // Задавай свой код тут
       stars: 1000, // Количество звёзд за активацию
       maxActivations: 4, // Максимум активаций
     };
