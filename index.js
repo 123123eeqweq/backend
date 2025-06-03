@@ -13,12 +13,12 @@ const freeDailyRoutes = require('./routes/free-daily');
 const liveSpinsRoutes = require('./routes/live-spins');
 const referralsRoutes = require('./routes/referrals');
 const depositRoutes = require('./routes/deposit');
-const Case = require('./models/Case');
-const Gift = require('./models/Gift');
-const LiveSpin = require('./models/LiveSpin');
+const promoRoutes = require('./routes/promo');
+const starsRoutes = require('./routes/stars'); // Новый роут
 const { Server } = require('socket.io');
 const http = require('http');
-const promoRoutes = require('./routes/promo'); // Добавляем новый роут
+const LiveSpin = require('./models/LiveSpin');
+const Gift = require('./models/Gift');
 
 dotenv.config();
 
@@ -50,7 +50,8 @@ app.use('/api/free-daily', freeDailyRoutes);
 app.use('/api/live-spins', liveSpinsRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/deposit', depositRoutes);
-app.use('/api/promo', promoRoutes); // Добавляем роут для промокодов
+app.use('/api/promo', promoRoutes);
+app.use('/api/stars', starsRoutes); // Новый роут
 
 // Тестовый эндпоинт
 app.get('/', (req, res) => {
@@ -60,10 +61,7 @@ app.get('/', (req, res) => {
 // Фоновая задача для генерации спинов
 const generateLiveSpin = async () => {
   try {
-    // Получаем все подарки из MongoDB
     const gifts = await Gift.find().lean();
-
-    // Фильтруем gift_001 (none)
     const validGifts = gifts.filter(gift => gift.giftId !== 'gift_001');
     if (validGifts.length === 0) {
       console.error('Нет доступных подарков для ленты!');
@@ -71,22 +69,16 @@ const generateLiveSpin = async () => {
       return;
     }
 
-    // Рассчитываем веса: обратная пропорция цены с бустом для средних
     const weights = validGifts.map(gift => {
-      const price = gift.price || 1; // Избегаем деления на 0
-      let weight = 1 / (price / 1000 + 1); // Базовый вес
-      // Буст для средних подарков (200–5000)
-      if (price >= 200 && price <= 5000) {
-        weight *= 2; // Увеличиваем шансы в 2 раза
-      }
+      const price = gift.price || 1;
+      let weight = 1 / (price / 1000 + 1);
+      if (price >= 200 && price <= 5000) weight *= 2;
       return weight;
     });
 
-    // Нормализуем веса в вероятности
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     const probabilities = weights.map(weight => weight / totalWeight);
 
-    // Выбираем случайный подарок
     let rand = Math.random();
     let cumProb = 0;
     let selectedGift = validGifts[0];
@@ -98,14 +90,12 @@ const generateLiveSpin = async () => {
       }
     }
 
-    // Сохраняем спин
     const liveSpin = new LiveSpin({
       giftId: selectedGift.giftId,
-      caseId: 'fake_case', // Без привязки к кейсу
+      caseId: 'fake_case',
     });
     await liveSpin.save();
 
-    // Формируем данные для спина
     const spinData = {
       id: liveSpin._id,
       giftId: liveSpin.giftId,
@@ -118,10 +108,8 @@ const generateLiveSpin = async () => {
       },
     };
 
-    // Отправляем спин всем клиентам
     io.emit('newLiveSpin', spinData);
 
-    // Удаляем старые спины (храним последние 100)
     const spinCount = await LiveSpin.countDocuments();
     if (spinCount > 100) {
       const oldestSpins = await LiveSpin.find()
@@ -130,17 +118,14 @@ const generateLiveSpin = async () => {
       await LiveSpin.deleteMany({ _id: { $in: oldestSpins.map(s => s._id) } });
     }
 
-    // Планируем следующий спин (3–8 сек)
-    const delay = Math.floor(Math.random() * 5000) + 3000; // 3000–8000 мс
+    const delay = Math.floor(Math.random() * 5000) + 3000;
     setTimeout(generateLiveSpin, delay);
   } catch (error) {
     console.error('Ошибка при генерации спина:', error);
-    // Перезапускаем через 3 секунды
     setTimeout(generateLiveSpin, 3000);
   }
 };
 
-// Запускаем генерацию спинов
 generateLiveSpin();
 
 // Запуск сервера
