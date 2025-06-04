@@ -24,8 +24,18 @@ router.post('/:caseId', async (req, res) => {
       return res.status(404).json({ message: 'Кейс не найден или пустой!' });
     }
 
-    // Проверка баланса
-    if (caseId === 'case_13') {
+    // Проверка для кейсов за депозиты
+    if (caseItem.isTopup) {
+      const requiredDeposits = parseInt(caseItem.name.match(/\d+/)[0]); // Извлекаем число из имени (напр., 500 из "За 500 пополнения")
+      if (user.totalDeposits < requiredDeposits) {
+        return res.status(403).json({
+          message: `Недостаточно депозитов! Нужно ${requiredDeposits} ⭐, у тебя ${user.totalDeposits} ⭐`,
+        });
+      }
+      if (user.openedTopupCases.includes(caseId)) {
+        return res.status(403).json({ message: 'Этот кейс уже открыт, братан!' });
+      }
+    } else if (caseId === 'case_13') {
       const now = new Date();
       const lastSpin = user.lastFreeDailySpin;
       if (lastSpin && now - lastSpin < 24 * 60 * 60 * 1000) {
@@ -68,8 +78,8 @@ router.post('/:caseId', async (req, res) => {
       chosenIndex = caseItem.items.length - 1;
     }
 
-    // Определяем позицию в ленте (примерно 75% длины ленты)
-    const tapePosition = Math.floor(50 * 0.75) + chosenIndex % 5; // 50 - длина ленты, немного варьируем позицию
+    // Определяем позицию в ленте
+    const tapePosition = Math.floor(50 * 0.75) + chosenIndex % 5;
 
     // Обновление юзера
     if (chosenGift.giftId !== 'gift_001') {
@@ -82,6 +92,9 @@ router.post('/:caseId', async (req, res) => {
     }
     if (caseId === 'case_13') {
       user.lastFreeDailySpin = new Date();
+    }
+    if (caseItem.isTopup) {
+      user.openedTopupCases.push(caseId); // Отмечаем кейс как открытый
     }
     await user.save();
 

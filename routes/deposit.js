@@ -30,19 +30,18 @@ router.post('/:telegramId', async (req, res) => {
     let amount = 0;
 
     if (tonAmount) {
-      // Депозит в TON: 1 TON = 100 звёздочек
       starsToAdd = Math.floor(tonAmount * 100);
       currency = 'TON';
       amount = tonAmount;
     } else if (starsAmount) {
-      // Депозит в Telegram Stars: 1 Star = 1 звёздочка
       starsToAdd = Math.floor(starsAmount);
       currency = 'STARS';
       amount = starsAmount;
     }
 
-    // Обновляем баланс
+    // Обновляем баланс и totalDeposits
     user.balance += starsToAdd;
+    user.totalDeposits += starsToAdd;
     await user.save({ session });
 
     // Логируем депозит
@@ -60,6 +59,7 @@ router.post('/:telegramId', async (req, res) => {
 
     res.json({
       newBalance: user.balance,
+      totalDeposits: user.totalDeposits, // Возвращаем для фронта
       starsAdded,
       message: `Начислено ${starsToAdd} ⭐ за ${amount} ${currency}!`,
     });

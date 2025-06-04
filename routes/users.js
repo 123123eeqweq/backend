@@ -15,6 +15,8 @@ router.get('/:telegramId', async (req, res) => {
       balance: user.balance,
       diamonds: user.diamonds,
       inventory: user.inventory,
+      totalDeposits: user.totalDeposits,
+      openedTopupCases: user.openedTopupCases,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
