@@ -51,18 +51,25 @@ router.post('/:caseId', async (req, res) => {
     let cumulativeProbability = 0;
     let chosenGift = null;
     let chosenProbability = 0;
-    for (const item of caseItem.items) {
+    let chosenIndex = 0;
+    for (let i = 0; i < caseItem.items.length; i++) {
+      const item = caseItem.items[i];
       cumulativeProbability += item.probability;
       if (rand <= cumulativeProbability) {
         chosenGift = await Gift.findOne({ giftId: item.giftId });
         chosenProbability = item.probability;
+        chosenIndex = i;
         break;
       }
     }
     if (!chosenGift) {
       chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
       chosenProbability = caseItem.items[caseItem.items.length - 1].probability;
+      chosenIndex = caseItem.items.length - 1;
     }
+
+    // Определяем позицию в ленте (примерно 75% длины ленты)
+    const tapePosition = Math.floor(50 * 0.75) + chosenIndex % 5; // 50 - длина ленты, немного варьируем позицию
 
     // Обновление юзера
     if (chosenGift.giftId !== 'gift_001') {
@@ -93,6 +100,7 @@ router.post('/:caseId', async (req, res) => {
         price: chosenGift.price,
       },
       probability: chosenProbability,
+      tapePosition,
       newBalance: user.balance,
       newDiamonds: user.diamonds,
     });
