@@ -7,7 +7,7 @@ const LiveSpin = require('../models/LiveSpin');
 
 router.post('/:caseId', async (req, res) => {
   try {
-    const { telegramId, isDemo } = req.body;
+    const { telegramId, isDemo, isHunterCase } = req.body;
     const { caseId } = req.params;
 
     if (!telegramId) {
@@ -22,6 +22,11 @@ router.post('/:caseId', async (req, res) => {
     const caseItem = await Case.findOne({ caseId });
     if (!caseItem || !caseItem.items || caseItem.items.length === 0) {
       return res.status(404).json({ message: 'Кейс не найден или пустой!' });
+    }
+
+    // Проверка на демо-режим для Free Daily, реферальных и кейсов за депозиты
+    if (isDemo && (caseId === 'case_13' || caseItem.isReferral || caseItem.isTopup)) {
+      return res.status(403).json({ message: 'Демо-режим недоступен для этого кейса, братан!' });
     }
 
     // Проверка баланса (только для не-демо режима)
@@ -58,26 +63,34 @@ router.post('/:caseId', async (req, res) => {
       }
     }
 
-    // Выбор подарка
-    const rand = Math.random();
-    let cumulativeProbability = 0;
     let chosenGift = null;
     let chosenProbability = 0;
     let chosenIndex = 0;
-    for (let i = 0; i < caseItem.items.length; i++) {
-      const item = caseItem.items[i];
-      cumulativeProbability += item.probability;
-      if (rand <= cumulativeProbability) {
-        chosenGift = await Gift.findOne({ giftId: item.giftId });
-        chosenProbability = item.probability;
-        chosenIndex = i;
-        break;
+
+    if (isHunterCase) {
+      // Для хантер-кейсов всегда возвращаем gift_001
+      chosenGift = await Gift.findOne({ giftId: 'gift_001' });
+      chosenProbability = 1; // 100% шанс
+      chosenIndex = caseItem.items.findIndex(item => item.giftId === 'gift_001');
+    } else {
+      // Обычная логика выбора подарка
+      const rand = Math.random();
+      let cumulativeProbability = 0;
+      for (let i = 0; i < caseItem.items.length; i++) {
+        const item = caseItem.items[i];
+        cumulativeProbability += item.probability;
+        if (rand <= cumulativeProbability) {
+          chosenGift = await Gift.findOne({ giftId: item.giftId });
+          chosenProbability = item.probability;
+          chosenIndex = i;
+          break;
+        }
       }
-    }
-    if (!chosenGift) {
-      chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
-      chosenProbability = caseItem.items[caseItem.items.length - 1].probability;
-      chosenIndex = caseItem.items.length - 1;
+      if (!chosenGift) {
+        chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
+        chosenProbability = caseItem.items[caseItem.items.length - 1].probability;
+        chosenIndex = caseItem.items.length - 1;
+      }
     }
 
     // Определяем позицию в ленте
