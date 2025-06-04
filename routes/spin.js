@@ -70,7 +70,7 @@ router.post('/:caseId', async (req, res) => {
     if (isHunterCase) {
       // Для хантер-кейсов всегда возвращаем gift_001
       chosenGift = await Gift.findOne({ giftId: 'gift_001' });
-      chosenProbability = 1; // 100% шанс
+      chosenProbability = 1;
       chosenIndex = caseItem.items.findIndex(item => item.giftId === 'gift_001');
     } else {
       // Обычная логика выбора подарка
@@ -78,6 +78,8 @@ router.post('/:caseId', async (req, res) => {
       let cumulativeProbability = 0;
       for (let i = 0; i < caseItem.items.length; i++) {
         const item = caseItem.items[i];
+        // Пропускаем gift_037 (plushpepe)
+        if (item.giftId === 'gift_037') continue;
         cumulativeProbability += item.probability;
         if (rand <= cumulativeProbability) {
           chosenGift = await Gift.findOne({ giftId: item.giftId });
@@ -86,11 +88,29 @@ router.post('/:caseId', async (req, res) => {
           break;
         }
       }
+      // Fallback: выбираем первый подарок с ненулевой вероятностью, кроме gift_037
       if (!chosenGift) {
-        chosenGift = await Gift.findOne({ giftId: caseItem.items[caseItem.items.length - 1].giftId });
-        chosenProbability = caseItem.items[caseItem.items.length - 1].probability;
-        chosenIndex = caseItem.items.length - 1;
+        const validItems = caseItem.items.filter(item => item.probability > 0 && item.giftId !== 'gift_037');
+        if (validItems.length === 0) {
+          // Если нет валидных подарков, возвращаем gift_001
+          chosenGift = await Gift.findOne({ giftId: 'gift_001' });
+          chosenProbability = 1;
+          chosenIndex = caseItem.items.findIndex(item => item.giftId === 'gift_001');
+        } else {
+          const fallbackItem = validItems[0];
+          chosenGift = await Gift.findOne({ giftId: fallbackItem.giftId });
+          chosenProbability = fallbackItem.probability;
+          chosenIndex = caseItem.items.findIndex(item => item.giftId === fallbackItem.giftId);
+        }
       }
+    }
+
+    // Дополнительная защита: если случайно выбрался gift_037, заменяем на gift_001
+    if (chosenGift.giftId === 'gift_037') {
+      console.log(`Warning: gift_037 was selected for case ${caseId}, forcing gift_001`);
+      chosenGift = await Gift.findOne({ giftId: 'gift_001' });
+      chosenProbability = 1;
+      chosenIndex = caseItem.items.findIndex(item => item.giftId === 'gift_001');
     }
 
     // Определяем позицию в ленте
