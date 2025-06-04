@@ -77,6 +77,7 @@ bot.on('successful_payment', async (ctx) => {
 
     const starsToAdd = Math.floor(starsAmount);
     user.balance += starsToAdd;
+    user.totalDeposits += starsToAdd; // Добавляем к totalDeposits
     await user.save({ session });
 
     const deposit = new Deposit({
