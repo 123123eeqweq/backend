@@ -55,4 +55,43 @@ router.post('/add-balance', async (req, res) => {
   }
 });
 
+// Снятие баланса
+router.post('/add-balance/remove', async (req, res) => {
+  const { telegramId, amount, type = 'stars' } = req.body;
+
+  // Валидация
+  if (!telegramId || !Number.isInteger(amount) || amount <= 0) {
+    return res.status(400).json({ message: 'Некорректные данные' });
+  }
+  if (!['stars', 'diamonds'].includes(type)) {
+    return res.status(400).json({ message: 'Тип должен быть stars или diamonds' });
+  }
+
+  try {
+    // Проверяем, достаточно ли баланса
+    const user = await User.findOne({ telegramId });
+    if (!user) {
+      return res.status(404).json({ message: 'Юзер не найден' });
+    }
+
+    const currentBalance = type === 'diamonds' ? user.diamonds : user.balance;
+    if (currentBalance < amount) {
+      return res.status(400).json({ message: `Недостаточно ${type} для снятия` });
+    }
+
+    // Уменьшаем баланс
+    const update = type === 'diamonds' ? { diamonds: -amount } : { balance: -amount };
+    const updatedUser = await User.findOneAndUpdate(
+      { telegramId },
+      { $inc: update },
+      { new: true }
+    );
+
+    res.json({ message: `Снято ${amount} ${type} у юзера ${telegramId}` });
+  } catch (error) {
+    console.error('Error removing balance:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 module.exports = router;
