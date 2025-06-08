@@ -113,4 +113,30 @@ router.post('/initiate-withdrawal/:telegramId', async (req, res) => {
   }
 });
 
+// Удаление подарка из инвентаря (вывод)
+router.post('/withdraw/:telegramId/:giftId', async (req, res) => {
+  try {
+    const user = await User.findOne({ telegramId: req.params.telegramId });
+    if (!user) {
+      return res.status(404).json({ message: 'Юзер не найден' });
+    }
+
+    const giftIndex = user.inventory.findIndex((item) => item.giftId === req.params.giftId);
+    if (giftIndex === -1) {
+      return res.status(400).json({ message: 'Подарок не найден в инвентаре' });
+    }
+
+    user.inventory.splice(giftIndex, 1);
+    await user.save();
+
+    res.json({
+      message: 'Подарок выведен',
+      inventory: user.inventory,
+    });
+  } catch (error) {
+    console.error('Error withdrawing gift:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 module.exports = router;
