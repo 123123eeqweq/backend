@@ -26,7 +26,7 @@ const createPromoCode = async () => {
 
     // Настройки промокода (меняй тут)
     const promoData = {
-      code: 'NIGGER', // Задавай свой код тут
+      code: 'RR24', // Задавай свой код тут
       stars: 1000, // Количество звёзд за активацию
       maxActivations: 4, // Максимум активаций
     };
