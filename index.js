@@ -19,7 +19,6 @@ const { Server } = require('socket.io');
 const http = require('http');
 const LiveSpin = require('./models/LiveSpin');
 const Gift = require('./models/Gift');
-const { processTransactions } = require('./services/tonMonitor');
 
 dotenv.config();
 
@@ -37,9 +36,7 @@ app.use(cors());
 app.use(express.json());
 
 // Подключение к MongoDB
-connectDB().then(() => {
-  processTransactions(); // Запускаем мониторинг транзакций
-});
+connectDB();
 
 // Маршруты
 app.use('/api/auth', authRoutes);

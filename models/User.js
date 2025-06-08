@@ -12,9 +12,8 @@ const userSchema = new mongoose.Schema({
   invitedBy: { type: String, default: null },
   referrals: [{ type: String }],
   referralBonus: { type: Number, default: 0 },
-  totalDeposits: { type: Number, default: 0 }, // Сумма всех депозитов в звёздочках
-  openedTopupCases: [{ type: String, default: [] }], // Список открытых кейсов за депозиты
-  tonAddress: { type: String, default: null },
+  totalDeposits: { type: Number, default: 0 },
+  openedTopupCases: [{ type: String, default: [] }],
 });
 
 module.exports = mongoose.model('User', userSchema);

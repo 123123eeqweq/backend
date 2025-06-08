@@ -10,9 +10,9 @@ router.post('/:telegramId', async (req, res) => {
 
   try {
     const { telegramId } = req.params;
-    const { tonAmount, starsAmount, transactionId, tonAddress } = req.body;
+    const { starsAmount, transactionId } = req.body;
 
-    if ((!tonAmount && !starsAmount) || (tonAmount && tonAmount <= 0) || (starsAmount && starsAmount <= 0)) {
+    if (!starsAmount || starsAmount <= 0) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ message: 'Некорректная сумма депозита, братан!' });
@@ -25,31 +25,22 @@ router.post('/:telegramId', async (req, res) => {
       return res.status(404).json({ message: 'Юзер не найден, братан!' });
     }
 
-    let starsToAdd = 0;
-    let currency = '';
-    let amount = 0;
+    const starsToAdd = Math.floor(starsAmount);
+    const currency = 'STARS';
+    const amount = starsAmount;
 
-    if (starsAmount) {
-      starsToAdd = Math.floor(starsAmount);
-      currency = 'STARS';
-      amount = starsAmount;
+    user.balance += starsToAdd;
+    user.totalDeposits += starsToAdd;
+    await user.save({ session });
 
-      user.balance += starsToAdd;
-      user.totalDeposits += starsToAdd;
-      await user.save({ session });
-
-      const deposit = new Deposit({
-        telegramId,
-        amount,
-        starsAdded: starsToAdd,
-        currency,
-        transactionId: transactionId || null,
-      });
-      await deposit.save({ session });
-    } else if (tonAmount && tonAddress) {
-      user.tonAddress = tonAddress;
-      await user.save({ session });
-    }
+    const deposit = new Deposit({
+      telegramId,
+      amount,
+      starsAdded: starsToAdd,
+      currency,
+      transactionId: transactionId || null,
+    });
+    await deposit.save({ session });
 
     await session.commitTransaction();
     session.endSession();
@@ -57,10 +48,8 @@ router.post('/:telegramId', async (req, res) => {
     res.json({
       newBalance: user.balance,
       totalDeposits: user.totalDeposits,
-      starsAdded: starsToAdd || 0,
-      message: starsAmount
-        ? `Начислено ${starsToAdd} ⭐ за ${amount} STARS!`
-        : 'Транзакция TON отправлена, звёздочки придут через 10-30 сек!',
+      starsAdded: starsToAdd,
+      message: `Начислено ${starsToAdd} ⭐ за ${amount} STARS!`,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -76,91 +65,11 @@ router.get('/:telegramId', async (req, res) => {
     const deposits = await Deposit.find({ telegramId });
     const user = await User.findOne({ telegramId });
     res.json({
-      user: user ? { balance: user.balance, tonAddress: user.tonAddress } : null,
+      user: user ? { balance: user.balance } : null,
       deposits,
     });
   } catch (error) {
     console.error('Ошибка проверки депозитов:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
-  }
-});
-
-router.get('/status/:telegramId/:txHash', async (req, res) => {
-  try {
-    const { telegramId, txHash } = req.params;
-    const deposit = await Deposit.findOne({ telegramId, transactionId: txHash });
-    const user = await User.findOne({ telegramId });
-
-    if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
-    }
-
-    if (deposit) {
-      return res.json({
-        status: 'completed',
-        newBalance: user.balance,
-        starsAdded: deposit.starsAdded,
-        message: `Начислено ${deposit.starsAdded} ⭐ за ${deposit.amount} TON!`,
-      });
-    } else {
-      return res.json({
-        status: 'pending',
-        newBalance: user.balance,
-        message: 'Транзакция в обработке, жди!',
-      });
-    }
-  } catch (error) {
-    console.error('Ошибка проверки статуса:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
-  }
-});
-
-router.post('/manual/:telegramId', async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { telegramId } = req.params;
-    const { tonAmount } = req.body;
-
-    if (!tonAmount || tonAmount <= 0) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: 'Некорректная сумма, братан!' });
-    }
-
-    const user = await User.findOne({ telegramId }).session(session);
-    if (!user) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
-    }
-
-    const starsToAdd = Math.floor(tonAmount * 100);
-    user.balance += starsToAdd;
-    user.totalDeposits += starsToAdd;
-    await user.save({ session });
-
-    const deposit = new Deposit({
-      telegramId,
-      amount: tonAmount,
-      starsAdded: starsToAdd,
-      currency: 'TON',
-      transactionId: 'manual',
-    });
-    await deposit.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    res.json({
-      newBalance: user.balance,
-      message: `Начислено ${starsToAdd} ⭐ за ${tonAmount} TON!`,
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error('Ошибка:', error);
     res.status(500).json({ message: 'Сервак упал, сорян!' });
   }
 });
