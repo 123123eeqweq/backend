@@ -14,11 +14,12 @@ const liveSpinsRoutes = require('./routes/live-spins');
 const referralsRoutes = require('./routes/referrals');
 const depositRoutes = require('./routes/deposit');
 const promoRoutes = require('./routes/promo');
-const starsRoutes = require('./routes/stars'); // Новый роут
+const starsRoutes = require('./routes/stars');
 const { Server } = require('socket.io');
 const http = require('http');
 const LiveSpin = require('./models/LiveSpin');
 const Gift = require('./models/Gift');
+const { processTransactions } = require('./services/tonMonitor'); // Добавляем импорт
 
 dotenv.config();
 
@@ -36,7 +37,9 @@ app.use(cors());
 app.use(express.json());
 
 // Подключение к MongoDB
-connectDB();
+connectDB().then(() => {
+  processTransactions(); // Запускаем мониторинг транзакций после подключения к БД
+});
 
 // Маршруты
 app.use('/api/auth', authRoutes);
@@ -51,7 +54,7 @@ app.use('/api/live-spins', liveSpinsRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/promo', promoRoutes);
-app.use('/api/stars', starsRoutes); // Новый роут
+app.use('/api/stars', starsRoutes);
 
 // Тестовый эндпоинт
 app.get('/', (req, res) => {
