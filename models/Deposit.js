@@ -5,7 +5,8 @@ const depositSchema = new mongoose.Schema({
   amount: { type: Number, required: true }, // Сумма в TON или Telegram Stars
   starsAdded: { type: Number, required: true }, // Начисленные звёздочки
   currency: { type: String, enum: ['TON', 'STARS'], required: true },
-  transactionId: { type: String }, // ID транзакции (для Stars)
+  transactionId: { type: String }, // ID транзакции
+  status: { type: String, enum: ['pending', 'confirmed', 'failed'], default: 'pending' },
   createdAt: { type: Date, default: Date.now },
 });
 
