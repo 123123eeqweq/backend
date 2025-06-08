@@ -8,6 +8,15 @@ const WALLET_ADDRESS = 'UQCeRGv6Nf-wnlAKYstkW7UKefuEt8n2dI1u_OOrysYvq8hC';
 const TONCENTER_API = 'https://toncenter.com/api/v2/getTransactions';
 const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279';
 
+// Нормализация TON-адреса (raw -> user-friendly)
+const normalizeAddress = (address) => {
+  if (!address) return null;
+  if (address.startsWith('0:')) {
+    return `EQ${Buffer.from(address.replace('0:', ''), 'hex').toString('base64').replace(/\+/g, '-').replace(/\//g, '_')}`;
+  }
+  return address;
+};
+
 async function processTransactions() {
   try {
     const response = await axios.get(TONCENTER_API, {
@@ -27,7 +36,7 @@ async function processTransactions() {
       const txHash = tx.transaction_id.hash;
       const amountNanotons = tx.in_msg.value;
       const amountTon = amountNanotons / 1_000_000_000;
-      const senderAddress = tx.in_msg.source;
+      const senderAddress = normalizeAddress(tx.in_msg.source);
 
       console.log(`Обработка транзакции: ${txHash}, сумма: ${amountTon} TON, отправитель: ${senderAddress}`);
 
