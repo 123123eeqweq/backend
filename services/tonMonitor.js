@@ -6,7 +6,7 @@ const Deposit = require('../models/Deposit');
 
 const WALLET_ADDRESS = 'UQCeRGv6Nf-wnlAKYstkW7UKefuEt8n2dI1u_OOrysYvq8hC';
 const TONCENTER_API = 'https://toncenter.com/api/v2/getTransactions';
-const API_KEY = process.env.TONCENTER_API_KEY || '';
+const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279';
 
 const userAddressMap = new Map();
 
