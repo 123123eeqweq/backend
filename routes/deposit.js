@@ -3,7 +3,6 @@ const router = express.Router();
 const User = require('../models/User');
 const Deposit = require('../models/Deposit');
 const mongoose = require('mongoose');
-const { registerUserAddress } = require('../services/tonMonitor');
 
 router.post('/:telegramId', async (req, res) => {
   const session = await mongoose.startSession();
@@ -31,7 +30,6 @@ router.post('/:telegramId', async (req, res) => {
     let amount = 0;
 
     if (starsAmount) {
-      // Обрабатываем Telegram Stars
       starsToAdd = Math.floor(starsAmount);
       currency = 'STARS';
       amount = starsAmount;
@@ -49,8 +47,8 @@ router.post('/:telegramId', async (req, res) => {
       });
       await deposit.save({ session });
     } else if (tonAmount && tonAddress) {
-      // Для TON только регистрируем адрес, начисление через tonMonitor
-      await registerUserAddress(telegramId, tonAddress);
+      user.tonAddress = tonAddress;
+      await user.save({ session });
     }
 
     await session.commitTransaction();
@@ -62,7 +60,7 @@ router.post('/:telegramId', async (req, res) => {
       starsAdded: starsToAdd || 0,
       message: starsAmount
         ? `Начислено ${starsToAdd} ⭐ за ${amount} STARS!`
-        : 'Транзакция TON отправлена, жди начисления звёздочек!',
+        : 'Транзакция TON отправлена, звёздочки придут через 10-30 сек!',
     });
   } catch (error) {
     await session.abortTransaction();
@@ -72,33 +70,67 @@ router.post('/:telegramId', async (req, res) => {
   }
 });
 
-router.get('/status/:telegramId/:txHash', async (req, res) => {
-  const { telegramId, txHash } = req.params;
+router.get('/:telegramId', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const deposits = await Deposit.find({ telegramId });
+    const user = await User.findOne({ telegramId });
+    res.json({
+      user: user ? { balance: user.balance, tonAddress: user.tonAddress } : null,
+      deposits,
+    });
+  } catch (error) {
+    console.error('Ошибка проверки депозитов:', error);
+    res.status(500).json({ message: 'Сервак упал, сорян!' });
+  }
+});
+
+router.post('/manual/:telegramId', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    const deposit = await Deposit.findOne({ telegramId, transactionId: txHash });
-    const user = await User.findOne({ telegramId });
+    const { telegramId } = req.params;
+    const { tonAmount } = req.body;
 
+    if (!tonAmount || tonAmount <= 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Некорректная сумма, братан!' });
+    }
+
+    const user = await User.findOne({ telegramId }).session(session);
     if (!user) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'Юзер не найден, братан!' });
     }
 
-    if (deposit) {
-      return res.json({
-        status: 'completed',
-        newBalance: user.balance,
-        starsAdded: deposit.starsAdded,
-        message: `Начислено ${deposit.starsAdded} ⭐ за ${deposit.amount} TON!`,
-      });
-    } else {
-      return res.json({
-        status: 'pending',
-        newBalance: user.balance,
-        message: 'Транзакция в обработке, жди!',
-      });
-    }
+    const starsToAdd = Math.floor(tonAmount * 100);
+    user.balance += starsToAdd;
+    user.totalDeposits += starsToAdd;
+    await user.save({ session });
+
+    const deposit = new Deposit({
+      telegramId,
+      amount: tonAmount,
+      starsAdded: starsToAdd,
+      currency: 'TON',
+      transactionId: 'manual',
+    });
+    await deposit.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      newBalance: user.balance,
+      message: `Начислено ${starsToAdd} ⭐ за ${tonAmount} TON!`,
+    });
   } catch (error) {
-    console.error('Ошибка проверки статуса:', error);
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Ошибка:', error);
     res.status(500).json({ message: 'Сервак упал, сорян!' });
   }
 });
