@@ -6,14 +6,7 @@ const Deposit = require('../models/Deposit');
 
 const WALLET_ADDRESS = 'UQCeRGv6Nf-wnlAKYstkW7UKefuEt8n2dI1u_OOrysYvq8hC';
 const TONCENTER_API = 'https://toncenter.com/api/v2/getTransactions';
-const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279';
-
-const userAddressMap = new Map();
-
-async function registerUserAddress(telegramId, tonAddress) {
-  userAddressMap.set(telegramId, tonAddress);
-  // TODO: Для продакшена сохраняй в базе (например, в User)
-}
+const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279'; // Твой ключ
 
 async function processTransactions() {
   try {
@@ -36,35 +29,24 @@ async function processTransactions() {
       const amountTon = amountNanotons / 1_000_000_000;
       const senderAddress = tx.in_msg.source;
 
+      // Проверяем, не обработана ли транзакция
       const existingDeposit = await Deposit.findOne({ transactionId: txHash });
       if (existingDeposit) continue;
 
-      let telegramId = null;
-      for (const [id, address] of userAddressMap.entries()) {
-        if (address === senderAddress) {
-          telegramId = id;
-          break;
-        }
-      }
-      if (!telegramId) continue;
+      // Находим юзера по TON-адресу
+      const user = await User.findOne({ tonAddress: senderAddress });
+      if (!user) continue;
 
       const session = await mongoose.startSession();
       try {
         session.startTransaction();
-        const user = await User.findOne({ telegramId }).session(session);
-        if (!user) {
-          await session.abortTransaction();
-          session.endSession();
-          continue;
-        }
-
         const starsToAdd = Math.floor(amountTon * 100);
         user.balance += starsToAdd;
         user.totalDeposits += starsToAdd;
         await user.save({ session });
 
         const deposit = new Deposit({
-          telegramId,
+          telegramId: user.telegramId,
           amount: amountTon,
           starsAdded: starsToAdd,
           currency: 'TON',
@@ -74,7 +56,7 @@ async function processTransactions() {
 
         await session.commitTransaction();
         session.endSession();
-        console.log(`Начислено ${starsToAdd} ⭐ для ${telegramId} за ${amountTon} TON`);
+        console.log(`Начислено ${starsToAdd} ⭐ для ${user.telegramId} за ${amountTon} TON`);
       } catch (err) {
         await session.abortTransaction();
         session.endSession();
@@ -86,6 +68,7 @@ async function processTransactions() {
   }
 }
 
+// Запускаем каждые 30 секунд
 cron.schedule('*/30 * * * * *', processTransactions);
 
-module.exports = { registerUserAddress, processTransactions };
+module.exports = { processTransactions };
