@@ -18,6 +18,7 @@ router.get('/:telegramId', async (req, res) => {
       inventory: user.inventory,
       totalDeposits: user.totalDeposits,
       openedTopupCases: user.openedTopupCases,
+      hasInitiatedFirstWithdrawal: user.hasInitiatedFirstWithdrawal,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -90,6 +91,24 @@ router.post('/add-balance/remove', async (req, res) => {
     res.json({ message: `Снято ${amount} ${type} у юзера ${telegramId}` });
   } catch (error) {
     console.error('Error removing balance:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Отметка первого вывода
+router.post('/initiate-withdrawal/:telegramId', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { telegramId: req.params.telegramId },
+      { $set: { hasInitiatedFirstWithdrawal: true } },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: 'Юзер не найден' });
+    }
+    res.json({ message: 'Первый вывод инициирован', hasInitiatedFirstWithdrawal: true });
+  } catch (error) {
+    console.error('Error initiating withdrawal:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
   referralBonus: { type: Number, default: 0 },
   totalDeposits: { type: Number, default: 0 },
   openedTopupCases: [{ type: String, default: [] }],
+  hasInitiatedFirstWithdrawal: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('User', userSchema);
