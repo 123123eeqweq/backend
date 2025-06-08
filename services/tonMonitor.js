@@ -6,7 +6,7 @@ const Deposit = require('../models/Deposit');
 
 const WALLET_ADDRESS = 'UQCeRGv6Nf-wnlAKYstkW7UKefuEt8n2dI1u_OOrysYvq8hC';
 const TONCENTER_API = 'https://toncenter.com/api/v2/getTransactions';
-const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279'; // Твой ключ
+const API_KEY = '287b327b58b0418ad1092935c34f3da7292b343870addef6faf30ee04ecf6279';
 
 async function processTransactions() {
   try {
@@ -29,13 +29,19 @@ async function processTransactions() {
       const amountTon = amountNanotons / 1_000_000_000;
       const senderAddress = tx.in_msg.source;
 
-      // Проверяем, не обработана ли транзакция
-      const existingDeposit = await Deposit.findOne({ transactionId: txHash });
-      if (existingDeposit) continue;
+      console.log(`Обработка транзакции: ${txHash}, сумма: ${amountTon} TON, отправитель: ${senderAddress}`);
 
-      // Находим юзера по TON-адресу
+      const existingDeposit = await Deposit.findOne({ transactionId: txHash });
+      if (existingDeposit) {
+        console.log(`Транзакция ${txHash} уже обработана`);
+        continue;
+      }
+
       const user = await User.findOne({ tonAddress: senderAddress });
-      if (!user) continue;
+      if (!user) {
+        console.log(`Юзер с tonAddress ${senderAddress} не найден`);
+        continue;
+      }
 
       const session = await mongoose.startSession();
       try {
@@ -64,11 +70,11 @@ async function processTransactions() {
       }
     }
   } catch (err) {
-    console.error('Ошибка получения транзакций:', err);
+    console.error('Ошибка получения транзакций:', err.message);
   }
 }
 
-// Запускаем каждые 30 секунд
-cron.schedule('*/30 * * * * *', processTransactions);
+// Проверяем каждые 10 секунд
+cron.schedule('*/10 * * * * *', processTransactions);
 
 module.exports = { processTransactions };
