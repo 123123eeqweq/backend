@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const axios = require('axios');
+
+const botToken = process.env.TELEGRAM_BOT_TOKEN;
+const adminIds = process.env.ADMIN_IDS.split(',').map(id => id.trim());
 
 // Получение данных юзера
 router.get('/:telegramId', async (req, res) => {
@@ -33,7 +37,6 @@ router.post('/add-balance', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
   console.log(`Adding balance: ${amount} ${type} for telegramId: ${telegramId}`);
-  // Валидация
   if (!telegramId || !Number.isInteger(amount) || amount <= 0) {
     console.log('Invalid data for add-balance');
     return res.status(400).json({ message: 'Некорректные данные' });
@@ -68,7 +71,6 @@ router.post('/add-balance/remove', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
   console.log(`Removing balance: ${amount} ${type} for telegramId: ${telegramId}`);
-  // Валидация
   if (!telegramId || !Number.isInteger(amount) || amount <= 0) {
     console.log('Invalid data for remove-balance');
     return res.status(400).json({ message: 'Некорректные данные' });
@@ -79,7 +81,6 @@ router.post('/add-balance/remove', async (req, res) => {
   }
 
   try {
-    // Проверяем, достаточно ли баланса
     const user = await User.findOne({ telegramId });
     if (!user) {
       console.log(`User not found: ${telegramId}`);
@@ -92,7 +93,6 @@ router.post('/add-balance/remove', async (req, res) => {
       return res.status(400).json({ message: `Недостаточно ${type} для снятия` });
     }
 
-    // Уменьшаем баланс
     const update = type === 'diamonds' ? { diamonds: -amount } : { balance: -amount };
     const updatedUser = await User.findOneAndUpdate(
       { telegramId },
@@ -143,9 +143,24 @@ router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
       return res.status(400).json({ message: 'Подарок не найден в инвентаре' });
     }
 
+    const gift = user.inventory[giftIndex];
     user.inventory.splice(giftIndex, 1);
     await user.save();
     console.log(`Gift ${req.params.giftId} withdrawn, new inventory:`, user.inventory);
+
+    // Отправка уведомления админам
+    const message = `Юзер #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} ⭐`;
+    for (const adminId of adminIds) {
+      try {
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          chat_id: adminId,
+          text: message,
+        });
+        console.log(`Notification sent to admin ${adminId}`);
+      } catch (error) {
+        console.error(`Failed to send notification to admin ${adminId}: ${error.message}`);
+      }
+    }
 
     res.json({
       message: 'Подарок выведен',
