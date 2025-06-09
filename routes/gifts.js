@@ -14,8 +14,7 @@ router.get('/', async (req, res) => {
     }));
     res.json(formattedGifts);
   } catch (error) {
-    console.error('Ошибка при загрузке подарков:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

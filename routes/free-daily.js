@@ -7,7 +7,7 @@ router.get('/status/:telegramId', async (req, res) => {
   try {
     const user = await User.findOne({ telegramId: req.params.telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     const now = new Date();
@@ -20,8 +20,7 @@ router.get('/status/:telegramId', async (req, res) => {
       timeLeft: Math.floor(timeLeft / 1000), // В секундах
     });
   } catch (error) {
-    console.error('Ошибка при проверке статуса Free Daily:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

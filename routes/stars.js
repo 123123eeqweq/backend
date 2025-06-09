@@ -13,28 +13,27 @@ router.post('/create-invoice', async (req, res) => {
     const { telegramId, starsAmount } = req.body;
 
     if (!telegramId || !starsAmount || starsAmount <= 0) {
-      return res.status(400).json({ message: 'Некорректные данные, братан!' });
+      return res.status(400).json({ message: 'Некорректные данные' });
     }
 
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     // Создаём инвойс через Bot API
     const invoiceLink = await bot.telegram.createInvoiceLink({
-      title: 'Пополнение звёздочек',
+      title: 'Пополнение звёзд',
       description: `Покупка ${starsAmount} Telegram Stars для рулетки`,
       payload: JSON.stringify({ telegramId, starsAmount }),
       provider_token: '', // Пустой для Telegram Stars
       currency: 'XTR', // Код валюты для Telegram Stars
-      prices: [{ label: 'Звёздочки', amount: starsAmount }],
+      prices: [{ label: 'Звёзды', amount: starsAmount }],
     });
 
     res.json({ invoiceLink });
   } catch (error) {
-    console.error('Ошибка создания инвойса:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
@@ -44,7 +43,6 @@ router.post('/webhook', async (req, res) => {
     await bot.handleUpdate(req.body);
     res.sendStatus(200);
   } catch (error) {
-    console.error('Ошибка вебхука:', error);
     res.sendStatus(500);
   }
 });
@@ -54,8 +52,7 @@ bot.on('pre_checkout_query', async (ctx) => {
   try {
     await ctx.answerPreCheckoutQuery(true);
   } catch (error) {
-    console.error('Ошибка pre_checkout_query:', error);
-    await ctx.answerPreCheckoutQuery(false, 'Ошибка обработки, попробуй позже!');
+    await ctx.answerPreCheckoutQuery(false, 'Ошибка обработки. Попробуйте позже');
   }
 });
 
@@ -72,7 +69,7 @@ bot.on('successful_payment', async (ctx) => {
     if (!user) {
       await session.abortTransaction();
       session.endSession();
-      return ctx.reply('Юзер не найден, братан!');
+      return ctx.reply('Пользователь не найден');
     }
 
     const starsToAdd = Math.floor(starsAmount);
@@ -92,12 +89,11 @@ bot.on('successful_payment', async (ctx) => {
     await session.commitTransaction();
     session.endSession();
 
-    await ctx.reply(`Начислено ${starsToAdd} ⭐ за ${starsAmount} Telegram Stars!`);
+    await ctx.reply(`Начислено ${starsToAdd} звёзд за ${starsAmount} Telegram Stars`);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('Ошибка successful_payment:', error);
-    await ctx.reply('Ошибка начисления, напиши админу!');
+    await ctx.reply('Ошибка начисления. Обратитесь к администратору');
   }
 });
 

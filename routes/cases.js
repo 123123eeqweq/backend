@@ -33,8 +33,7 @@ router.get('/', async (req, res) => {
     );
     res.json(casesWithGifts);
   } catch (error) {
-    console.error('Ошибка при загрузке кейсов:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
@@ -43,7 +42,7 @@ router.get('/:caseId', async (req, res) => {
   try {
     const caseItem = await Case.findOne({ caseId: req.params.caseId });
     if (!caseItem) {
-      return res.status(404).json({ message: 'Кейс не найден, братан!' });
+      return res.status(404).json({ message: 'Кейс не найден' });
     }
     const items = await Promise.all(
       caseItem.items.map(async (item) => {
@@ -67,8 +66,7 @@ router.get('/:caseId', async (req, res) => {
     };
     res.json(caseWithGifts);
   } catch (error) {
-    console.error('Ошибка при загрузке кейса:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

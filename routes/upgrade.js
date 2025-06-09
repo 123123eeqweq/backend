@@ -8,32 +8,32 @@ router.post('/:telegramId', async (req, res) => {
   const { telegramId } = req.params;
 
   if (!giveGiftId || !receiveGiftId) {
-    return res.status(400).json({ message: 'Нужны giveGiftId и receiveGiftId, братан!' });
+    return res.status(400).json({ message: 'Требуются giveGiftId и receiveGiftId' });
   }
 
   try {
-    // Находим юзера
+    // Находим пользователя
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     // Проверяем, есть ли giveGiftId в инвентаре
     const giveItemIndex = user.inventory.findIndex(item => item.giftId === giveGiftId);
     if (giveItemIndex === -1) {
-      return res.status(400).json({ message: 'Шмотка не в инвентаре, братан!' });
+      return res.status(400).json({ message: 'Подарок не найден в инвентаре' });
     }
 
     // Находим подарки
     const giveGift = await Gift.findOne({ giftId: giveGiftId });
     const receiveGift = await Gift.findOne({ giftId: receiveGiftId });
     if (!giveGift || !receiveGift) {
-      return res.status(404).json({ message: 'Подарок не найден, братан!' });
+      return res.status(404).json({ message: 'Подарок не найден' });
     }
 
     // Проверяем, что receiveGift дороже
     if (receiveGift.price <= giveGift.price) {
-      return res.status(400).json({ message: 'Выбери шмотку подороже, братан!' });
+      return res.status(400).json({ message: 'Выберите подарок с большей стоимостью' });
     }
 
     // Вычисляем шанс успеха
@@ -79,8 +79,7 @@ router.post('/:telegramId', async (req, res) => {
       chance, // Возвращаем шанс для фронта
     });
   } catch (error) {
-    console.error('Ошибка при апгрейде:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

@@ -8,11 +8,9 @@ const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id
 
 router.get('/:telegramId', async (req, res) => {
   try {
-    console.log(`Fetching user with telegramId: ${req.params.telegramId}`);
     const user = await User.findOne({ telegramId: req.params.telegramId });
     if (!user) {
-      console.log(`User not found: ${req.params.telegramId}`);
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
     res.json({
       telegramId: user.telegramId,
@@ -26,21 +24,17 @@ router.get('/:telegramId', async (req, res) => {
       hasInitiatedFirstWithdrawal: user.hasInitiatedFirstWithdrawal,
     });
   } catch (error) {
-    console.error(`Error fetching user: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
 router.post('/add-balance', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
-  console.log(`Adding balance: ${amount} ${type} for telegramId: ${telegramId}`);
   if (!telegramId || !Number.isInteger(amount) || amount <= 0) {
-    console.log('Invalid data for add-balance');
     return res.status(400).json({ message: 'Некорректные данные' });
   }
   if (!['stars', 'diamonds'].includes(type)) {
-    console.log(`Invalid type: ${type}`);
     return res.status(400).json({ message: 'Тип должен быть stars или diamonds' });
   }
 
@@ -53,40 +47,33 @@ router.post('/add-balance', async (req, res) => {
     );
 
     if (!user) {
-      console.log(`User not found: ${telegramId}`);
-      return res.status(404).json({ message: 'Юзер не найден' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
-    res.json({ message: `Начислено ${amount} ${type} юзеру ${telegramId}` });
+    res.json({ message: `Начислено ${amount} ${type} пользователю ${telegramId}` });
   } catch (error) {
-    console.error(`Error adding balance: ${error.message}`);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
 router.post('/add-balance/remove', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
-  console.log(`Removing balance: ${amount} ${type} for telegramId: ${telegramId}`);
   if (!telegramId || !Number.isInteger(amount) || amount <= 0) {
-    console.log('Invalid data for remove-balance');
     return res.status(400).json({ message: 'Некорректные данные' });
   }
   if (!['stars', 'diamonds'].includes(type)) {
-    console.log(`Invalid type: ${type}`);
     return res.status(400).json({ message: 'Тип должен быть stars или diamonds' });
   }
 
   try {
     const user = await User.findOne({ telegramId });
     if (!user) {
-      console.log(`User not found: ${telegramId}`);
-      return res.status(404).json({ message: 'Юзер не найден' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     const currentBalance = type === 'diamonds' ? user.diamonds : user.balance;
     if (currentBalance < amount) {
-      console.log(`Insufficient ${type}: ${currentBalance} < ${amount}`);
       return res.status(400).json({ message: `Недостаточно ${type} для снятия` });
     }
 
@@ -97,67 +84,58 @@ router.post('/add-balance/remove', async (req, res) => {
       { new: true }
     );
 
-    res.json({ message: `Снято ${amount} ${type} у юзера ${telegramId}` });
+    res.json({ message: `Снято ${amount} ${type} у пользователя ${telegramId}` });
   } catch (error) {
-    console.error(`Error removing balance: ${error.message}`);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
 router.post('/initiate-withdrawal/:telegramId', async (req, res) => {
   try {
-    console.log(`Initiating first withdrawal for telegramId: ${req.params.telegramId}`);
     const user = await User.findOneAndUpdate(
       { telegramId: req.params.telegramId },
       { $set: { hasInitiatedFirstWithdrawal: true } },
       { new: true }
     );
     if (!user) {
-      console.log(`User not found: ${req.params.telegramId}`);
-      return res.status(404).json({ message: 'Юзер не найден' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
     res.json({ message: 'Первый вывод инициирован', hasInitiatedFirstWithdrawal: true });
   } catch (error) {
-    console.error(`Error initiating withdrawal: ${error.message}`);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
 router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
   try {
-    console.log(`Withdrawing gift ${req.params.giftId} for telegramId: ${req.params.telegramId}`);
     const user = await User.findOne({ telegramId: req.params.telegramId });
     if (!user) {
-      console.log(`User not found: ${req.params.telegramId}`);
-      return res.status(404).json({ message: 'Юзер не найден' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     const giftIndex = user.inventory.findIndex((item) => item.giftId === req.params.giftId);
     if (giftIndex === -1) {
-      console.log(`Gift not found: ${req.params.giftId} in inventory`);
       return res.status(400).json({ message: 'Подарок не найден в инвентаре' });
     }
 
     const gift = user.inventory[giftIndex];
     user.inventory.splice(giftIndex, 1);
     await user.save();
-    console.log(`Gift ${req.params.giftId} withdrawn, new inventory:`, user.inventory);
 
     // Проверка переменных окружения
     if (!botToken || adminIds.length === 0) {
-      console.error('Missing TELEGRAM_BOT_TOKEN or ADMIN_IDS in .env');
+      // Логирование пропущено для продакшна, так как это не критично
     } else {
       // Отправка уведомления админам
-      const message = `Юзер #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} ⭐`;
+      const message = `Пользователь #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} звёзд`;
       for (const adminId of adminIds) {
         try {
-          const response = await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             chat_id: adminId,
             text: message,
           });
-          console.log(`Notification sent to admin ${adminId}:`, response.data);
         } catch (error) {
-          console.error(`Failed to send notification to admin ${adminId}:`, error.message, error.response?.data);
+          // Ошибка отправки уведомления не влияет на основной процесс
         }
       }
     }
@@ -167,8 +145,7 @@ router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
       inventory: user.inventory,
     });
   } catch (error) {
-    console.error(`Error withdrawing gift: ${error.message}`);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

@@ -8,22 +8,22 @@ router.post('/:telegramId/:giftId', async (req, res) => {
   try {
     const { telegramId, giftId } = req.params;
 
-    // Находим юзера
+    // Находим пользователя
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     // Проверяем, есть ли подарок в инвентаре
     const inventoryItemIndex = user.inventory.findIndex(item => item.giftId === giftId);
     if (inventoryItemIndex === -1) {
-      return res.status(400).json({ message: 'Подарок не в инвентаре, братан!' });
+      return res.status(400).json({ message: 'Подарок не найден в инвентаре' });
     }
 
     // Находим подарок
     const gift = await Gift.findOne({ giftId });
     if (!gift) {
-      return res.status(404).json({ message: 'Подарок не найден, братан!' });
+      return res.status(404).json({ message: 'Подарок не найден' });
     }
 
     // Обновляем баланс и удаляем подарок
@@ -32,13 +32,12 @@ router.post('/:telegramId/:giftId', async (req, res) => {
     await user.save();
 
     res.json({
-      message: 'Подарок продан, звёзды на балансе!',
+      message: 'Подарок продан. Звёзды начислены на баланс',
       newBalance: user.balance,
       inventory: user.inventory,
     });
   } catch (error) {
-    console.error('Ошибка при продаже:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

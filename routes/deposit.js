@@ -15,25 +15,25 @@ router.post('/:telegramId', async (req, res) => {
     if (!amount || amount <= 0) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: 'Некорректная сумма депозита, братан!' });
+      return res.status(400).json({ message: 'Некорректная сумма депозита' });
     }
 
     const user = await User.findOne({ telegramId }).session(session);
     if (!user) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: 'Юзер не найден, братан!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     let starsToAdd;
     if (currency === 'TON') {
-      starsToAdd = Math.floor(amount * 100); // 1 TON = 100 звёздочек
+      starsToAdd = Math.floor(amount * 100); // 1 TON = 100 звёзд
     } else if (currency === 'STARS') {
-      starsToAdd = Math.floor(amount); // Звёздочки 1:1
+      starsToAdd = Math.floor(amount); // Звёзды 1:1
     } else {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: 'Неподдерживаемая валюта, братан!' });
+      return res.status(400).json({ message: 'Неподдерживаемая валюта' });
     }
 
     user.balance += starsToAdd;
@@ -56,13 +56,12 @@ router.post('/:telegramId', async (req, res) => {
       newBalance: user.balance,
       totalDeposits: user.totalDeposits,
       starsAdded: starsToAdd,
-      message: `Начислено ${starsToAdd} ⭐ за ${amount} ${currency}!`,
+      message: `Начислено ${starsToAdd} звёзд за ${amount} ${currency}`,
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('Ошибка депозита:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
@@ -76,8 +75,7 @@ router.get('/:telegramId', async (req, res) => {
       deposits,
     });
   } catch (error) {
-    console.error('Ошибка проверки депозитов:', error);
-    res.status(500).json({ message: 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

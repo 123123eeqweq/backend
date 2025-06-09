@@ -55,7 +55,7 @@ app.use('/api/stars', starsRoutes);
 
 // Тестовый эндпоинт
 app.get('/', (req, res) => {
-  res.json({ message: 'Йо, бэк для рулетки жив!' });
+  res.json({ message: 'Сервер для рулетки запущен' });
 });
 
 // Фоновая задача для генерации спинов
@@ -64,7 +64,6 @@ const generateLiveSpin = async () => {
     const gifts = await Gift.find().lean();
     const validGifts = gifts.filter(gift => gift.giftId !== 'gift_001');
     if (validGifts.length === 0) {
-      console.error('Нет доступных подарков для ленты!');
       setTimeout(generateLiveSpin, 3000);
       return;
     }
@@ -121,7 +120,6 @@ const generateLiveSpin = async () => {
     const delay = Math.floor(Math.random() * 5000) + 3000;
     setTimeout(generateLiveSpin, delay);
   } catch (error) {
-    console.error('Ошибка при генерации спина:', error);
     setTimeout(generateLiveSpin, 3000);
   }
 };
@@ -131,5 +129,5 @@ generateLiveSpin();
 // Запуск сервера
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Сервак пашет на порту ${PORT}, братан!`);
+  console.log(`200 ok`);
 });

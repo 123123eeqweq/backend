@@ -11,22 +11,22 @@ router.post('/:caseId', async (req, res) => {
     const { caseId } = req.params;
 
     if (!telegramId) {
-      return res.status(400).json({ message: 'Требуется Telegram ID, братан!' });
+      return res.status(400).json({ message: 'Требуется идентификатор Telegram' });
     }
 
     const user = await User.findOne({ telegramId });
     if (!user) {
-      return res.status(404).json({ message: 'Юзер не найден!' });
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
     const caseItem = await Case.findOne({ caseId });
     if (!caseItem || !caseItem.items || caseItem.items.length === 0) {
-      return res.status(404).json({ message: 'Кейс не найден или пустой!' });
+      return res.status(404).json({ message: 'Кейс не найден или пуст' });
     }
 
     // Проверка на демо-режим для Free Daily, реферальных и кейсов за депозиты
     if (isDemo && (caseId === 'case_13' || caseItem.isReferral || caseItem.isTopup)) {
-      return res.status(403).json({ message: 'Демо-режим недоступен для этого кейса, братан!' });
+      return res.status(403).json({ message: 'Демо-режим недоступен для этого кейса' });
     }
 
     // Проверка баланса (только для не-демо режима)
@@ -44,20 +44,20 @@ router.post('/:caseId', async (req, res) => {
         const requiredDeposits = parseInt(caseItem.name.match(/\d+/)[0]);
         if (user.totalDeposits < requiredDeposits) {
           return res.status(403).json({
-            message: `Недостаточно депозитов! Нужно ${requiredDeposits} ⭐, у тебя ${user.totalDeposits} ⭐`,
+            message: `Недостаточно депозитов. Требуется ${requiredDeposits} звёзд, у вас ${user.totalDeposits}`,
           });
         }
         if (user.openedTopupCases.includes(caseId)) {
-          return res.status(403).json({ message: 'Этот кейс уже открыт, братан!' });
+          return res.status(403).json({ message: 'Этот кейс уже открыт' });
         }
       } else if (caseItem.isReferral && caseItem.diamondPrice > 0) {
         if (user.diamonds < caseItem.diamondPrice) {
-          return res.status(400).json({ message: `Недостаточно алмазов! Нужно ${caseItem.diamondPrice}, у тебя ${user.diamonds}` });
+          return res.status(400).json({ message: `Недостаточно алмазов. Требуется ${caseItem.diamondPrice}, у вас ${user.diamonds}` });
         }
         user.diamonds -= caseItem.diamondPrice;
       } else if (caseItem.price > 0) {
         if (user.balance < caseItem.price) {
-          return res.status(400).json({ message: `Недостаточно звёзд! Нужно ${caseItem.price}, у тебя ${user.balance}` });
+          return res.status(400).json({ message: `Недостаточно звёзд. Требуется ${caseItem.price}, у вас ${user.balance}` });
         }
         user.balance -= caseItem.price;
       }
@@ -107,7 +107,6 @@ router.post('/:caseId', async (req, res) => {
 
     // Дополнительная защита: если случайно выбрался gift_037, заменяем на gift_001
     if (chosenGift.giftId === 'gift_037') {
-      console.log(`Warning: gift_037 was selected for case ${caseId}, forcing gift_001`);
       chosenGift = await Gift.findOne({ giftId: 'gift_001' });
       chosenProbability = 1;
       chosenIndex = caseItem.items.findIndex(item => item.giftId === 'gift_001');
@@ -116,7 +115,7 @@ router.post('/:caseId', async (req, res) => {
     // Определяем позицию в ленте
     const tapePosition = Math.floor(50 * 0.75) + chosenIndex % 5;
 
-    // Обновление юзера (только для не-демо режима)
+    // Обновление пользователя (только для не-демо режима)
     if (!isDemo) {
       if (chosenGift.giftId !== 'gift_001') {
         user.inventory.push({
@@ -155,8 +154,7 @@ router.post('/:caseId', async (req, res) => {
       newDiamonds: isDemo ? user.diamonds : user.diamonds,
     });
   } catch (error) {
-    console.error('Spin error:', error.message);
-    res.status(500).json({ message: error.message || 'Сервак упал, сорян!' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

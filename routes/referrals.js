@@ -16,7 +16,7 @@ router.get('/:telegramId', async (req, res) => {
       diamonds: user.diamonds,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 

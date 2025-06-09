@@ -5,15 +5,13 @@ const User = require('../models/User');
 router.post('/login', async (req, res) => {
   try {
     const { telegramId, firstName, photoUrl, refId } = req.body;
-    console.log('Auth request:', { telegramId, firstName, refId }); // Отладка
 
     if (!telegramId || !firstName) {
-      return res.status(400).json({ message: 'Требуются Telegram ID и имя' });
+      return res.status(400).json({ message: 'Требуются идентификатор Telegram и имя' });
     }
 
     let user = await User.findOne({ telegramId });
     if (user) {
-      console.log('User already exists:', telegramId); // Отладка
       return res.json({
         id: user.telegramId,
         firstName: user.firstName,
@@ -36,21 +34,14 @@ router.post('/login', async (req, res) => {
     if (refId) {
       const referrer = await User.findOne({ telegramId: refId });
       if (referrer && refId !== telegramId) {
-        console.log('Found referrer:', refId); // Отладка
         user.invitedBy = refId;
         referrer.referrals.push(telegramId);
         referrer.diamonds += 1;
         await referrer.save();
-        console.log('Referrer updated:', { referrals: referrer.referrals, diamonds: referrer.diamonds }); // Отладка
-      } else {
-        console.log('Referrer not found or same as user:', { refId, telegramId }); // Отладка
       }
-    } else {
-      console.log('No refId provided'); // Отладка
     }
 
     await user.save();
-    console.log('New user created:', telegramId); // Отладка
 
     res.json({
       id: user.telegramId,
@@ -61,8 +52,7 @@ router.post('/login', async (req, res) => {
       inventory: user.inventory,
     });
   } catch (error) {
-    console.error('Auth error:', error); // Отладка
-    res.status(500).json({ message: 'Ошибка сервера' });
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
   }
 });
 
