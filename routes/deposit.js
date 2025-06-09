@@ -10,9 +10,9 @@ router.post('/:telegramId', async (req, res) => {
 
   try {
     const { telegramId } = req.params;
-    const { starsAmount, transactionId } = req.body;
+    const { amount, currency, transactionId } = req.body;
 
-    if (!starsAmount || starsAmount <= 0) {
+    if (!amount || amount <= 0) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ message: 'Некорректная сумма депозита, братан!' });
@@ -25,9 +25,16 @@ router.post('/:telegramId', async (req, res) => {
       return res.status(404).json({ message: 'Юзер не найден, братан!' });
     }
 
-    const starsToAdd = Math.floor(starsAmount);
-    const currency = 'STARS';
-    const amount = starsAmount;
+    let starsToAdd;
+    if (currency === 'TON') {
+      starsToAdd = Math.floor(amount * 100); // 1 TON = 100 звёздочек
+    } else if (currency === 'STARS') {
+      starsToAdd = Math.floor(amount); // Звёздочки 1:1
+    } else {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Неподдерживаемая валюта, братан!' });
+    }
 
     user.balance += starsToAdd;
     user.totalDeposits += starsToAdd;
@@ -49,7 +56,7 @@ router.post('/:telegramId', async (req, res) => {
       newBalance: user.balance,
       totalDeposits: user.totalDeposits,
       starsAdded: starsToAdd,
-      message: `Начислено ${starsToAdd} ⭐ за ${amount} STARS!`,
+      message: `Начислено ${starsToAdd} ⭐ за ${amount} ${currency}!`,
     });
   } catch (error) {
     await session.abortTransaction();

@@ -4,9 +4,8 @@ const User = require('../models/User');
 const axios = require('axios');
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
-const adminIds = process.env.ADMIN_IDS.split(',').map(id => id.trim());
+const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 
-// Получение данных юзера
 router.get('/:telegramId', async (req, res) => {
   try {
     console.log(`Fetching user with telegramId: ${req.params.telegramId}`);
@@ -32,7 +31,6 @@ router.get('/:telegramId', async (req, res) => {
   }
 });
 
-// Начисление баланса
 router.post('/add-balance', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
@@ -66,7 +64,6 @@ router.post('/add-balance', async (req, res) => {
   }
 });
 
-// Снятие баланса
 router.post('/add-balance/remove', async (req, res) => {
   const { telegramId, amount, type = 'stars' } = req.body;
 
@@ -107,7 +104,6 @@ router.post('/add-balance/remove', async (req, res) => {
   }
 });
 
-// Отметка первого вывода
 router.post('/initiate-withdrawal/:telegramId', async (req, res) => {
   try {
     console.log(`Initiating first withdrawal for telegramId: ${req.params.telegramId}`);
@@ -127,7 +123,6 @@ router.post('/initiate-withdrawal/:telegramId', async (req, res) => {
   }
 });
 
-// Удаление подарка из инвентаря (вывод)
 router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
   try {
     console.log(`Withdrawing gift ${req.params.giftId} for telegramId: ${req.params.telegramId}`);
@@ -148,17 +143,22 @@ router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
     await user.save();
     console.log(`Gift ${req.params.giftId} withdrawn, new inventory:`, user.inventory);
 
-    // Отправка уведомления админам
-    const message = `Юзер #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} ⭐`;
-    for (const adminId of adminIds) {
-      try {
-        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          chat_id: adminId,
-          text: message,
-        });
-        console.log(`Notification sent to admin ${adminId}`);
-      } catch (error) {
-        console.error(`Failed to send notification to admin ${adminId}: ${error.message}`);
+    // Проверка переменных окружения
+    if (!botToken || adminIds.length === 0) {
+      console.error('Missing TELEGRAM_BOT_TOKEN or ADMIN_IDS in .env');
+    } else {
+      // Отправка уведомления админам
+      const message = `Юзер #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} ⭐`;
+      for (const adminId of adminIds) {
+        try {
+          const response = await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            chat_id: adminId,
+            text: message,
+          });
+          console.log(`Notification sent to admin ${adminId}:`, response.data);
+        } catch (error) {
+          console.error(`Failed to send notification to admin ${adminId}:`, error.message, error.response?.data);
+        }
       }
     }
 
