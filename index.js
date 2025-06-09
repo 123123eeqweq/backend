@@ -35,6 +35,12 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Логирование запросов для дебага
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Подключение к MongoDB
 connectDB();
 
