@@ -27,7 +27,7 @@ const addBalance = async () => {
     // Подключаемся к базе
     await connectDB();
 
-    const telegramId = '338804511';
+    const telegramId = '11';
     const balanceToAdd = 5000;
     const diamondsToAdd = 1000;
 
