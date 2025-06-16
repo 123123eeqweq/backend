@@ -47,6 +47,9 @@ router.post('/:caseId', async (req, res) => {
             message: `Недостаточно депозитов. Требуется ${requiredDeposits} звёзд, у вас ${user.totalDeposits}`,
           });
         }
+        if (user.openedTopupCases.includes(caseId)) {
+          return res.status(403).json({ message: 'Этот кейс уже открыт' });
+        }
       } else if (caseItem.isReferral && caseItem.diamondPrice > 0) {
         if (user.diamonds < caseItem.diamondPrice) {
           return res.status(400).json({ message: `Недостаточно алмазов. Требуется ${caseItem.diamondPrice}, у вас ${user.diamonds}` });
@@ -124,6 +127,9 @@ router.post('/:caseId', async (req, res) => {
       }
       if (caseId === 'case_13') {
         user.lastFreeDailySpin = new Date();
+      }
+      if (caseItem.isTopup) {
+        user.openedTopupCases.push(caseId);
       }
       await user.save();
 
