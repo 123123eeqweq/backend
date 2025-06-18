@@ -127,7 +127,7 @@ router.get('/withdraw/:telegramId/:giftId', async (req, res) => {
       // Логирование пропущено для продакшна, так как это не критично
     } else {
       // Отправка уведомления админам
-      const message = `Пользователь #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} звёзд`;
+      const message = `Пользователь #${req.params.telegramId} вывел подарок "${gift.name}" (${req.params.giftId}) за ${gift.price} звёзд\nСсылка: https://t.me/@id${req.params.telegramId}`;
       for (const adminId of adminIds) {
         try {
           await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
