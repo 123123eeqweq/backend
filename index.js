@@ -26,13 +26,18 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: 'https://my-roulette-app.vercel.app', // Разрешаем только твой фронт
     methods: ['GET', 'POST'],
+    credentials: true // На случай авторизации или кук
   },
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://my-roulette-app.vercel.app', // Разрешаем только твой фронт
+  methods: ['GET', 'POST'], // Твои роуты используют только GET и POST
+  credentials: true // На случай авторизации или кук
+}));
 app.use(express.json());
 
 // Подключение к MongoDB
