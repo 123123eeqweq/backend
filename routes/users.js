@@ -6,6 +6,15 @@ const axios = require('axios');
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 
+// Проверка авторизации
+router.use((req, res, next) => {
+  const telegramId = req.headers.authorization?.split(' ')[1]; // Ожидаем "Bearer <telegramId>"
+  if (!telegramId) {
+    return res.status(401).json({ message: 'Требуется авторизация' });
+  }
+  next();
+});
+
 router.get('/:telegramId', async (req, res) => {
   try {
     const user = await User.findOne({ telegramId: req.params.telegramId });

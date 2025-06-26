@@ -2,6 +2,15 @@ const express = require('express');
 const router = express.Router();
 const Gift = require('../models/Gift');
 
+// Проверка авторизации
+router.use((req, res, next) => {
+  const telegramId = req.headers.authorization?.split(' ')[1]; // Ожидаем "Bearer <telegramId>"
+  if (!telegramId) {
+    return res.status(401).json({ message: 'Требуется авторизация' });
+  }
+  next();
+});
+
 // Эндпоинт для получения всех подарков
 router.get('/', async (req, res) => {
   try {
